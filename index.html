@@ -1,6 +1,17 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#060a13">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bigman">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <title>Bigman Capital · Trading Journal</title>
 <style>
 :root{--bg:#eef1f7;--card:#fff;--tx:#0c1424;--mut:#5a6880;--bd:#d9e0ec;--ac:#1e3a8a;--gold:#b88a1c;--on:#fff;--g:#0e9f6e;--r:#e04646;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -74,6 +85,7 @@ nav button.on{background:linear-gradient(135deg,var(--gold),color-mix(in srgb,va
 .chips button{border:1px solid var(--bd);background:none;color:var(--tx);border-radius:99px;padding:7px 12px;font:inherit;font-size:12px}
 .rings{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .rings .card{text-align:center;margin:0}
+.acs{width:auto;padding:6px 10px;font-size:12px;border-radius:99px;margin-right:6px;display:inline-block}
 </style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body><canvas id="bg" aria-hidden="true"></canvas>
@@ -82,6 +94,8 @@ nav button.on{background:linear-gradient(135deg,var(--gold),color-mix(in srgb,va
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 const SUPA_URL="https://gsrjzyqeysuysaqudany.supabase.co",SUPA_KEY="sb_publishable_k8L_rApbnITmnT3wi1VDHg_RDuZfwqn";
+const TS_KEY="";let tsTok="",fails=0,lock=0;
+function mountTs(){if(!TS_KEY||!window.turnstile||!document.getElementById("ts"))return;window.turnstile.render("#ts",{sitekey:TS_KEY,callback:t=>{tsTok=t},"expired-callback":()=>{tsTok=""}})}
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pad=n=>String(n).padStart(2,"0");
@@ -89,7 +103,7 @@ const money=n=>(n<0?"−":"")+"$"+Math.abs(n).toLocaleString(undefined,{minimumF
 const cls=n=>n>0?"g":n<0?"r":"";
 let trades=[],reviews={},cfg={start:0},tab="dash",edit=null,delId=null,shot="",errMsg="";
 let calM=new Date(new Date().getFullYear(),new Date().getMonth(),1),selDay=null;
-let uname="",sb=null,sync="Connecting…",store=null,assets=null,dl=null,cloud=false,rt=null;
+let dp=null,all=[],accts=[],active="",uname="",sb=null,sync="Connecting…",store=null,assets=null,dl=null,cloud=false,rt=null;
 const net=t=>t.pnl-(t.fees||0);
 
 function ingest(docs){
@@ -100,26 +114,36 @@ function ingest(docs){
     else if(d.id==="cfg")cfg=Object.assign({start:0},d);
   }
   trades.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+  all=trades;applyAcct();
 }
+function applyAcct(){
+  accts=(cfg.accounts&&cfg.accounts.length)?cfg.accounts.map(a=>Object.assign({},a)):[{id:"a_main",name:"Main account",start:Number(cfg.start)||0}];
+  active=accts.some(a=>a.id===cfg.active)?cfg.active:accts[0].id;
+  trades=all.filter(t=>(t.acct||accts[0].id)===active);
+}
+function commitCfg(id){cfg={accounts:accts,active:id};applyAcct();render();save("cfg",{accounts:accts,active:id})}
+function switchAcct(id){commitCfg(id)}
+function addAcct(){const v=document.getElementById("f_new").value.trim();if(!v)return;const id="a_"+Date.now().toString(36);accts=accts.concat([{id,name:v,start:0}]);commitCfg(id)}
+function renameAcct(v){v=v.trim();if(!v)return;const a=accts.find(x=>x.id===active);if(a){a.name=v;commitCfg(active)}}
 function refresh(){
   const a=document.activeElement;
   if(tab==="add"||(a&&/^(TEXTAREA|INPUT|SELECT)$/.test(a.tagName)))badge();else render();
 }
 function badge(){const b=$("#sync");if(b)b.textContent=sync}
 async function save(k,o){
-  sync="Saving…";badge();
-  try{await store.put(k,o);sync=cloud?"Saved to cloud":"Saved on this device"}
+  sync="";badge();
+  try{await store.put(k,o);sync=cloud?"":""}
   catch(e){sync="Save failed ("+((e&&e.code)||"error")+")"}
   badge();
 }
 async function remove(k){
-  try{await store.del(k);sync=cloud?"Saved to cloud":"Saved on this device"}
+  try{await store.del(k);sync=cloud?"":""}
   catch(e){sync="Delete failed ("+((e&&e.code)||"error")+")"}
   badge();
 }
 
 function stats(){
-  const n=trades.length,start=Number(cfg.start)||0;
+  const n=trades.length,start=Number((accts.find(a=>a.id===active)||{}).start)||0;
   let eq=start,peak=start,dd=0,ddp=0,gw=0,gl=0,w=0,sr=0,rc=0;
   const pts=[start],by={},wd=[0,0,0,0,0,0,0],wn=[0,0,0,0,0,0,0];
   for(const t of trades){
@@ -162,13 +186,18 @@ function vDash(){
   return h+`</div>`+startCard();
 }
 function startCard(){
-  return `<div class="card"><h2>Account</h2>${sb?`<label for="f_name">Your name</label><input id="f_name" value="${esc(uname)}" onchange="setName(this.value)" style="margin-bottom:6px">`:""}<label for="f_start">Starting balance ($)</label><input id="f_start" type="number" inputmode="decimal" step="any" min="0" value="${esc(cfg.start||"")}" onchange="setStart(this.value)"><div class="sub" style="margin-top:8px">Used for balance and drawdown. Leave empty for 0.</div></div>`;
+  const a=accts.find(x=>x.id===active)||{name:"",start:0};
+  return `<div class="card"><h2>Trading accounts</h2><div class="chips">${accts.map(x=>`<button style="${x.id===active?"background:var(--gold);color:var(--on);border-color:var(--gold);font-weight:600":""}" onclick="switchAcct('${x.id}')">${esc(x.name)}</button>`).join("")}</div>
+  <label for="f_an">Account name</label><input id="f_an" value="${esc(a.name)}" onchange="renameAcct(this.value)">
+  <label for="f_start">Starting balance ($)</label><input id="f_start" type="number" inputmode="decimal" step="any" min="0" value="${esc(a.start||"")}" onchange="setStart(this.value)">
+  <div class="row2" style="margin-top:12px"><input id="f_new" placeholder="New account name"><button class="btn sm" style="width:100%" onclick="addAcct()">Add account</button></div>
+  ${sb?`<label for="f_name">Your name</label><input id="f_name" value="${esc(uname)}" onchange="setName(this.value)">`:""}${instBlock()}</div>`;
 }
 function setName(v){uname=v.trim();if(sb)sb.auth.updateUser({data:{name:uname}})}
 function setStart(v){
   const n=v===""?0:Number(v);
   if(!isFinite(n)||n<0)return;
-  cfg={start:n};save("cfg",{start:n});
+  const a=accts.find(x=>x.id===active);if(a){a.start=n;commitCfg(active)}
 }
 
 function tradeCard(t){
@@ -217,7 +246,7 @@ function vAdd(){
   const moods=["","Calm","Confident","Anxious","FOMO","Revenge","Greedy","Bored","Tired"];
   return `<div class="card"><h2>${edit?"Edit trade":"New trade"}</h2>
   <label for="f_date">Date &amp; time</label><input id="f_date" type="datetime-local" value="${esc(t.date)}">
-  <div class="row2"><div><label for="f_sym">Symbol</label><input id="f_sym" value="${esc(t.symbol)}" autocapitalize="characters"></div>
+  <div class="row2"><div><label for="f_sym">Pair / instrument</label><select id="f_sym" onchange="document.getElementById('f_sym2').style.display=this.value==='OTHER'?'block':'none'">${Object.entries(PAIRS).map(([g,l])=>`<optgroup label="${g}">${l.map(p=>`<option ${p===t.symbol?"selected":""}>${p}</option>`).join("")}</optgroup>`).join("")}<option value="OTHER" ${ALLP.includes(t.symbol)?"":"selected"}>Other…</option></select><input id="f_sym2" placeholder="Type symbol" autocapitalize="characters" style="margin-top:6px;display:${ALLP.includes(t.symbol)?"none":"block"}" value="${ALLP.includes(t.symbol)?"":esc(t.symbol)}"></div>
   <div><label for="f_side">Direction</label><select id="f_side"><option value="buy" ${t.side==="buy"?"selected":""}>Buy</option><option value="sell" ${t.side==="sell"?"selected":""}>Sell</option></select></div></div>
   <div class="row2">${f("f_lots","Lots",t.lots)}${f("f_pnl","Profit / loss ($)",t.pnl)}</div>
   <div class="row2">${f("f_en","Entry price",t.entry)}${f("f_ex","Exit price",t.exit)}</div>
@@ -227,7 +256,7 @@ function vAdd(){
   <div><label for="f_mood">Mindset</label><select id="f_mood">${moods.map(m=>`<option value="${m}" ${t.mood===m?"selected":""}>${m||"—"}</option>`).join("")}</select></div></div>
   <label for="f_notes">Notes</label><textarea id="f_notes" placeholder="Why did you take it? What did you learn?">${esc(t.notes||"")}</textarea>
   ${assets?`<label for="f_shot">Screenshot</label><input id="f_shot" type="file" accept="image/*" onchange="upShot(this)"><div class="sub" id="shotmsg">${shot?"Screenshot attached ✓":""}</div>`:""}
-  <div class="sub" style="margin-top:8px">For XAUUSD, profit/loss and risk are calculated automatically (100 oz per lot). Type over them if your broker differs.</div><div class="err" id="err">${esc(errMsg)}</div>
+  <div class="sub" style="margin-top:8px">Profit/loss and risk fill in automatically for gold, silver, major crypto and USD forex pairs (standard lot sizes). Type over them if your broker differs.</div><div class="err" id="err">${esc(errMsg)}</div>
   <button class="btn" onclick="submit()">${edit?"Save changes":"Save trade"}</button>
   ${edit?`<button class="btn s" onclick="act('tab','trades')">Cancel</button>`:""}</div>`;
 }
@@ -239,7 +268,7 @@ async function upShot(inp){
 }
 async function submit(){
   const g=id=>document.getElementById(id).value.trim(),num=id=>g(id)===""?null:Number(g(id));
-  const t={date:g("f_date"),symbol:g("f_sym").toUpperCase(),side:g("f_side"),lots:num("f_lots"),entry:num("f_en"),exit:num("f_ex"),pnl:num("f_pnl"),fees:g("f_fee")===""?0:Number(g("f_fee")),sl:num("f_sl"),tp:num("f_tp"),risk:num("f_risk"),setup:g("f_setup"),mood:g("f_mood"),notes:g("f_notes"),shot};
+  const t={acct:active,date:g("f_date"),symbol:symVal(),side:g("f_side"),lots:num("f_lots"),entry:num("f_en"),exit:num("f_ex"),pnl:num("f_pnl"),fees:g("f_fee")===""?0:Number(g("f_fee")),sl:num("f_sl"),tp:num("f_tp"),risk:num("f_risk"),setup:g("f_setup"),mood:g("f_mood"),notes:g("f_notes"),shot};
   const bad=[];
   if(!t.date)bad.push("date & time");
   if(!t.symbol)bad.push("symbol");
@@ -269,16 +298,38 @@ function act(a,x){
   else if(a==="csv"){csv();return}
   render();
 }
+const PAIRS={"Metals":["XAUUSD","XAGUSD","XAUEUR"],"Crypto":["BTCUSD","BTCUSDT","ETHUSD","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","LTCUSD","ADAUSDT","DOGEUSDT"],"Forex majors":["EURUSD","GBPUSD","USDJPY","USDCHF","USDCAD","AUDUSD","NZDUSD"],"Forex minors":["EURGBP","EURJPY","EURCHF","EURAUD","EURCAD","EURNZD","GBPJPY","GBPCHF","GBPAUD","GBPCAD","GBPNZD","AUDJPY","AUDCAD","AUDCHF","AUDNZD","CADJPY","CADCHF","CHFJPY","NZDJPY","NZDCAD","NZDCHF"],"Exotics":["USDZAR","USDMXN","USDTRY","USDSGD","USDHKD","USDNOK","USDSEK","USDPLN","USDCNH","USDTHB"],"Indices & oil":["US30","NAS100","SPX500","GER40","UK100","JPN225","USOIL","UKOIL"]};
+const ALLP=[].concat(...Object.values(PAIRS));
+function symVal(){const e=document.getElementById("f_sym");return e?(e.value==="OTHER"?document.getElementById("f_sym2").value.trim().toUpperCase():e.value):""}
+function calc(sy,en,ex,d,l){
+  const v=(ex-en)*d*l;
+  if(sy==="XAUUSD")return v*100;
+  if(sy==="XAGUSD")return v*5000;
+  if(/^(BTC|ETH|SOL|BNB|XRP|LTC|ADA|DOGE)/.test(sy))return v;
+  if(/^[A-Z]{6}$/.test(sy)&&!/^(XAU|XAG)/.test(sy)){
+    const b=sy.slice(0,3),q=sy.slice(3);
+    if(q==="USD")return v*1e5;
+    if(b==="USD"&&ex>0)return v*1e5/ex;
+  }
+  return null;
+}
+function instBlock(){
+  const st=matchMedia("(display-mode: standalone)").matches||navigator.standalone;if(st)return"";
+  if(dp)return `<button class="btn" onclick="installApp()">Install app on this device</button>`;
+  if(/iphone|ipad|ipod/i.test(navigator.userAgent))return `<div class="sub" style="margin-top:12px">Install: tap the Share button in Safari, then “Add to Home Screen”.</div>`;
+  return "";
+}
+async function installApp(){if(!dp)return;dp.prompt();try{await dp.userChoice}catch(e){}dp=null;render()}
 function hi(){const h=new Date().getHours();return h<12?"Good morning":h<17?"Good afternoon":"Good evening"}
 function bindAuto(){
   const q=i=>document.getElementById(i);
   ["f_pnl","f_risk"].forEach(i=>{if(edit&&q(i).value!=="")q(i).dataset.man="1";q(i).addEventListener("input",e=>{if(e.isTrusted)q(i).dataset.man=q(i).value===""?"":"1"})});
-  ["f_sym","f_side","f_lots","f_en","f_ex","f_sl"].forEach(i=>q(i).addEventListener("input",()=>{
-    if(!/^XAU/.test(q("f_sym").value.trim().toUpperCase()))return;
+  ["f_sym","f_sym2","f_side","f_lots","f_en","f_ex","f_sl"].forEach(i=>q(i).addEventListener("input",()=>{
+    const sy=symVal();
     const l=+q("f_lots").value,en=+q("f_en").value,ex=+q("f_ex").value,sl=+q("f_sl").value,d=q("f_side").value==="buy"?1:-1;
     const put=(id,v)=>{const el=q(id);if(el.dataset.man!=="1")el.value=v};
-    if(l>0&&en>0&&ex>0)put("f_pnl",((ex-en)*d*l*100).toFixed(2));
-    if(l>0&&en>0&&sl>0)put("f_risk",(Math.abs(en-sl)*l*100).toFixed(2));
+    const a1=l>0&&en>0&&ex>0?calc(sy,en,ex,d,l):null;if(a1!==null)put("f_pnl",a1.toFixed(2));
+    const a2=l>0&&en>0&&sl>0?calc(sy,en,sl,d,l):null;if(a2!==null)put("f_risk",Math.abs(a2).toFixed(2));
   }));
 }
 let chat=[];
@@ -342,26 +393,62 @@ function answer(q){
   if(/profit|loss|made|lost|net|p&l|pnl|perform|doing|result/.test(l))return `${lab[0].toUpperCase()+lab.slice(1)}: ${money(u.p)} over ${u.n} trade${u.n===1?"":"s"}, win rate ${u.wr.toFixed(1)}%.`;
   return "I can answer questions like: How am I doing this month? What is my best setup? Which day should I avoid? What is my drawdown? How can I improve?";
 }
-function askNow(t){
-  const el=document.getElementById("q"),q=(t||(el?el.value:"")).trim();if(!q)return;
-  chat.push({q,a:answer(q)});render();window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
+function journalSummary(){
+  const s=stats(),a=accts.find(x=>x.id===active)||{name:"",start:0};
+  const L=[`Account: ${a.name}; start balance ${a.start||0}; current ${s.eq.toFixed(2)}`,
+    `Trades ${s.n}; net ${s.total.toFixed(2)}; win rate ${s.wr.toFixed(1)}%; profit factor ${s.pf===null?"n/a":s.pf===Infinity?"inf":s.pf.toFixed(2)}; avg win ${s.aw.toFixed(2)}; avg loss ${s.al.toFixed(2)}; max drawdown ${s.dd.toFixed(2)}`,
+    "By setup: "+Object.entries(s.by).map(([k,v])=>`${k} ${v.n} trades ${v.p.toFixed(2)}`).join("; "),
+    "Trades (date, pair, side, lots, net, setup, mood, stop):"];
+  for(const t of trades.slice(-80))L.push([t.date.slice(0,16),t.symbol,t.side,t.lots,net(t).toFixed(2),t.setup||"-",t.mood||"-",t.sl>0?"sl":"nosl"].join(","));
+  return L.join("\n").slice(0,12000);
+}
+async function askNow(t){
+  const el=document.getElementById("q"),q=(t||(el?el.value:"")).trim().slice(0,400);if(!q)return;
+  const item={q,a:"Thinking…"};chat.push(item);render();window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
+  let a=null;
+  if(sb&&cloud&&trades.length){
+    try{
+      const {data,error}=await sb.functions.invoke("ask-journal",{body:{question:q,summary:journalSummary()}});
+      if(!error&&data&&data.answer)a=data.answer;
+      else if(error&&error.context&&error.context.status===429)a="You’ve used today’s AI questions. Here is the built-in answer instead:\n"+answer(q);
+    }catch(e){}
+  }
+  item.a=a||answer(q);render();
 }
 function vIns(){
   const ask=`<div class="card"><h2>Ask your journal</h2><div class="chips">${["How am I doing this month?","What is my best setup?","Which day should I avoid?","How can I improve?","What is my drawdown?"].map(x=>`<button onclick="askNow('${x}')">${x}</button>`).join("")}</div>
   <div class="chat">${chat.map(c=>`<div class="q">${esc(c.q)}</div><div class="a">${esc(c.a)}</div>`).join("")}</div>
   <div style="display:flex;gap:8px"><input id="q" placeholder="Ask anything about your trades…" onkeydown="if(event.key==='Enter')askNow()"><button class="btn sm" onclick="askNow()" style="padding:0 16px">Ask</button></div>
-  <div class="sub" style="margin-top:8px">Answers are calculated from your own journal on this device.</div></div>`;
-  if(trades.length<3)return `<div class="card empty">Log at least 3 trades to unlock your AI analysis.</div>`+ask;
+  <div class="sub" style="margin-top:8px">Questions are answered by AI using a summary of your trades (pair, size, result, setup and mood; your notes are never sent). If AI is unavailable, built-in answers are used.</div></div>`;
+  if(trades.length<3)return `<div class="card empty">Log at least 3 trades to unlock your AI analysis.</div>`+posCard()+ask;
   const s=stats(),sc=score(s),lab=sc>=75?"Elite":sc>=55?"Solid":sc>=35?"Developing":"Needs work";
   return `<div class="rings">${ring(sc,sc>=55?"--g":sc>=35?"--ac":"--r",sc,"Discipline · "+lab)}${ring(s.wr,"--g",s.wr.toFixed(0)+"%","Win rate")}</div>
-  <h2 style="margin-top:14px">Smart analysis</h2>`+tips().map(x=>`<div class="card ins ${x[0]}">${x[1]}</div>`).join("")+monthly()+ask;
+  <h2 style="margin-top:14px">Smart analysis</h2>`+tips().map(x=>`<div class="card ins ${x[0]}">${x[1]}</div>`).join("")+monthly()+proj()+posCard()+ask;
+}
+function posCard(){
+  const opts=ALLP.filter(p=>calc(p,1,2,1,1)!==null).map(p=>`<option>${p}</option>`).join("");
+  return `<div class="card"><h2>Position size calculator</h2><div class="row2"><div><label for="p_r">Risk per trade (%)</label><input id="p_r" type="number" step="any" inputmode="decimal" value="1"></div><div><label for="p_s">Pair</label><select id="p_s">${opts}</select></div></div><div class="row2"><div><label for="p_en">Entry</label><input id="p_en" type="number" step="any" inputmode="decimal"></div><div><label for="p_sl">Stop loss</label><input id="p_sl" type="number" step="any" inputmode="decimal"></div></div><button class="btn" onclick="calcLots()">Calculate lots</button><div id="p_out" style="margin-top:10px;font-weight:600"></div></div>`;
+}
+function calcLots(){
+  const o=document.getElementById("p_out"),g=i=>Number(document.getElementById(i).value),bal=stats().eq,r=g("p_r"),en=g("p_en"),sl=g("p_sl"),sy=document.getElementById("p_s").value;
+  if(!(bal>0))return o.textContent="Set a starting balance for this account first.";
+  if(!(r>0)||!(en>0)||!(sl>0)||en===sl)return o.textContent="Enter a risk %, an entry and a different stop loss.";
+  const per=Math.abs(calc(sy,en,sl,1,1)),risk=bal*r/100;
+  o.textContent=`${(risk/per).toFixed(2)} lots, risking ${money(risk)} (${r}% of ${money(bal)})`;
+}
+function proj(){
+  if(trades.length<10)return "";
+  const R=trades.map(net),N=50,S=500,res=[];
+  for(let i=0;i<S;i++){let e=0;for(let k=0;k<N;k++)e+=R[Math.floor(Math.random()*R.length)];res.push(e)}
+  res.sort((a,b)=>a-b);const q=p=>res[Math.floor(p*(S-1))],pos=res.filter(v=>v>0).length/S*100;
+  return `<div class="card"><h2>Future projection</h2><div class="sub">500 simulations of your next ${N} trades, resampled from your own results.</div><div class="grid" style="margin-top:10px"><div><div class="k">Likely case</div><div class="v ${cls(q(.5))}">${money(q(.5))}</div></div><div><div class="k">Chance of profit</div><div class="v">${pos.toFixed(0)}%</div></div><div><div class="k">Bad case (5%)</div><div class="v r">${money(q(.05))}</div></div><div><div class="k">Good case (95%)</div><div class="v g">${money(q(.95))}</div></div></div></div>`;
 }
 function render(){
   const names={dash:"Home",trades:"Trades",add:"Add",cal:"Calendar",ins:"AI"};
   const ic={dash:"🏠",trades:"📒",add:"＋",cal:"🗓",ins:"🧠"};
   $("#nav").innerHTML=Object.keys(names).map(k=>`<button class="${tab===k?"on":""}" onclick="act('tab','${k}')"><i>${ic[k]}</i>${names[k]}</button>`).join("");
   const body={dash:vDash,trades:vTrades,add:vAdd,cal:vCal,ins:vIns}[tab]();
-  $("#app").innerHTML=`<div class="top"><div><h1>Bigman Capital</h1><div class="hello">${uname?`${hi()}, <b>${esc(uname)}</b> 👋`:"Trading Journal"}</div></div><span class="sub"><span id="sync">${esc(sync)}</span>${sb&&cloud?` · <a href="#" onclick="signOut();return false" style="color:var(--mut)">Sign out</a>`:""}</span></div>`+body;
+  $("#app").innerHTML=`<div class="top"><div><h1>Bigman Capital</h1><div class="hello">${uname?`${hi()}, <b>${esc(uname)}</b> 👋`:"Trading Journal"}</div></div><span class="sub">${accts.length>1?`<select class="acs" onchange="switchAcct(this.value)">${accts.map(a=>`<option value="${a.id}" ${a.id===active?"selected":""}>${esc(a.name)}</option>`).join("")}</select>`:""}<span id="sync">${esc(sync)}</span>${sb&&cloud?` · <a href="#" onclick="signOut();return false" style="color:var(--mut)">Sign out</a>`:""}</span></div>`+body;
   if(tab==="add")bindAuto();
 }
 function mkStore(m,persist){
@@ -383,7 +470,7 @@ async function startCloud(session){
   const {data,error}=await sb.from("journal").select("id,data");
   if(error){sync="Cloud error ("+(error.code||"load")+")";startLocal(sync);return}
   const m={};for(const r of data)m[r.id]=r.data;
-  cloud=true;sync="Saved to cloud";
+  cloud=true;sync="";
   store=mkStore(m,async(op,k,o)=>{
     const r=op==="put"?await sb.from("journal").upsert({user_id:uid,id:k,data:o}):await sb.from("journal").delete().eq("id",k);
     if(r.error)throw{code:r.error.code||"error"};
@@ -403,29 +490,32 @@ function login(msg,ok){
   <label for="l_e">Email</label><input id="l_e" type="email" autocomplete="username">
   <label for="l_p">Password${up?" (8+ characters)":""}</label><input id="l_p" type="password" autocomplete="${up?"new-password":"current-password"}">
   ${up?`<label for="l_p2">Confirm password</label><input id="l_p2" type="password" autocomplete="new-password">`:""}
-  <div class="err" id="l_m" style="${ok?"color:var(--g)":""}">${esc(msg||"")}</div>
+  <div id="ts" style="margin-top:10px"></div><div class="err" id="l_m" style="${ok?"color:var(--g)":""}">${esc(msg||"")}</div>
   <button class="btn" onclick="doAuth()">${up?"Create my account":"Sign in"}</button>
   ${up?"":`<button class="btn s" onclick="forgot()">Forgot password?</button>`}</div>`;
+  setTimeout(mountTs,60);
 }
 async function doAuth(){
   const e=$("#l_e").value.trim(),p=$("#l_p").value,nm=mode==="up"?$("#l_n").value.trim():"";
   if(mode==="up"&&!nm)return m("Please enter your name.");
   if(!e||!p)return m("Enter your email and password.");
+  if(Date.now()<lock)return m("Too many attempts. Please wait a moment and try again.");
+  if(TS_KEY&&!tsTok)return m("Please complete the security check.");
   if(mode==="up"){
     if(p.length<8)return m("Use a password of at least 8 characters.");
     if(p!==$("#l_p2").value)return m("The passwords don’t match.");
-    const {data,error}=await sb.auth.signUp({email:e,password:p,options:{data:{name:nm}}});
+    const {data,error}=await sb.auth.signUp({email:e,password:p,options:{data:{name:nm},captchaToken:tsTok||undefined}});
     if(error)return m("Sign-up failed: "+error.message);
     if(data.session)return startCloud(data.session);
     mode="in";return login("Account created. Check your email to confirm it, then sign in.",1);
   }
-  const {data,error}=await sb.auth.signInWithPassword({email:e,password:p});
-  if(error)return m("Sign-in failed: "+error.message);
+  const {data,error}=await sb.auth.signInWithPassword({email:e,password:p,options:{captchaToken:tsTok||undefined}});
+  if(error){if(++fails>=5){lock=Date.now()+30000;fails=0}if(window.turnstile&&TS_KEY){turnstile.reset();tsTok=""}return m("Sign-in failed: "+error.message)}
   await startCloud(data.session);
 }
 async function forgot(){
   const e=$("#l_e").value.trim();if(!e)return m("Enter your email first.");
-  const {error}=await sb.auth.resetPasswordForEmail(e,{redirectTo:location.origin+location.pathname});
+  const {error}=await sb.auth.resetPasswordForEmail(e,{redirectTo:location.origin+location.pathname,captchaToken:tsTok||undefined});
   m(error?error.message:"Reset link sent. Check your email.",!error);
 }
 function resetForm(){
@@ -500,5 +590,10 @@ async function setPw(){
   addEventListener("resize",()=>{size();draw()});
   draw();if(!reduce)requestAnimationFrame(frame);
 })();
+</script>
+<script>
+addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;if(tab==="dash")render()});
+addEventListener("appinstalled",()=>{dp=null;if(tab==="dash")render()});
+if("serviceWorker" in navigator&&location.protocol==="https:")addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
 </body></html>
