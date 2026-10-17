@@ -454,7 +454,11 @@ async function askNow(t){
       const {data,error}=await sb.functions.invoke("ask-journal",{body:{question:q,summary:journalSummary(),history:hist}});
       if(!error&&data&&data.answer)a=data.answer;
       else if(error&&error.context&&error.context.status===429)why="You’ve used today’s AI questions, so here is a built-in answer instead:\n";
-      else why="The AI isn’t reachable right now, so here is a built-in answer instead:\n";
+      else{
+        let j=null;try{j=await error.context.json()}catch(e){}
+        const st=error&&error.context&&error.context.status;
+        why="AI problem ("+((j&&j.error)||st||"unknown")+(j&&j.status?" "+j.status:"")+(j&&j.detail?": "+String(j.detail).slice(0,220):"")+"). Built-in answer instead:\n";
+      }
     }catch(e){why="The AI isn’t reachable right now, so here is a built-in answer instead:\n"}
   }
   item.a=a||why+answer(q);render();
