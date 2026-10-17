@@ -211,7 +211,7 @@ function startCard(){
   <label for="f_an">Account name</label><input id="f_an" value="${esc(a.name)}" onchange="renameAcct(this.value)">
   <label for="f_start">Starting balance ($)</label><input id="f_start" type="number" inputmode="decimal" step="any" min="0" value="${esc(a.start||"")}" onchange="setStart(this.value)">
   <div class="row2" style="margin-top:12px"><input id="f_new" placeholder="New account name"><button class="btn sm" style="width:100%" onclick="addAcct()">Add account</button></div>
-  ${sb?`<label for="f_name">Your name</label><input id="f_name" value="${esc(uname)}" onchange="setName(this.value)">`:""}${sb?`<button class="btn s" onclick="syncMt5()">Sync MT5 trades</button><div class="sub" style="margin-top:6px">${esc(mt5Msg)}</div>`:""}${instBlock()}</div>`;
+  ${sb?`<label for="f_name">Your name</label><input id="f_name" value="${esc(uname)}" onchange="setName(this.value)">`:""}${sb?mt5Block():""}${instBlock()}</div>`;
 }
 function setName(v){uname=v.trim();if(sb)sb.auth.updateUser({data:{name:uname}})}
 function setStart(v){
@@ -525,12 +525,39 @@ async function startCloud(session){
     const r=op==="put"?await sb.from("journal").upsert({user_id:uid,id:k,data:o}):await sb.from("journal").delete().eq("id",k);
     if(r.error)throw{code:r.error.code||"error"};
   });
+  await loadMt5();
   render();
   autoMt5();
 }
-let mt5Msg="";
+let mt5Msg="",mt5=null,mt5Del=false;
+async function loadMt5(){try{const {data}=await sb.from("mt5_links").select("login,server").maybeSingle();mt5=data||null}catch(e){mt5=null}}
+function mt5Block(){
+  const inp=(id,l,t,ph)=>`<label for="${id}">${l}</label><input id="${id}" type="${t}" autocomplete="off"${ph?` placeholder="${ph}"`:""}>`;
+  return `<h2 style="margin-top:18px">MetaTrader 5</h2>${mt5?`<div class="sub">Connected: account ${esc(mt5.login)} on ${esc(mt5.server)}</div>`:`<div class="sub">Enter your MT5 details to import trades automatically. Use your investor (read-only) password, never your trading password.</div>${inp("m_srv","Server name","text","e.g. ICMarketsSC-MT5")}${inp("m_log","Account number","text")}${inp("m_pw","Investor password","password")}<button class="btn" onclick="connectMt5()">Connect MT5 account</button>`}
+  <button class="btn s" onclick="syncMt5()">Sync MT5 trades</button>${mt5?`<button class="btn s" style="${mt5Del?"color:var(--r);border-color:var(--r)":""}" onclick="disconnectMt5()">${mt5Del?"Tap again to disconnect":"Disconnect"}</button>`:""}<div class="sub" style="margin-top:6px">${esc(mt5Msg)}</div>`;
+}
+async function connectMt5(){
+  const g=i=>document.getElementById(i).value.trim(),server=g("m_srv"),login=g("m_log"),pw=document.getElementById("m_pw").value;
+  if(!server||!/^\d{3,12}$/.test(login)||!pw){mt5Msg="Enter your server, account number (digits only) and investor password.";return render()}
+  mt5Msg="Connecting… this can take a minute.";render();
+  try{
+    const {data,error}=await sb.functions.invoke("mt5-connect",{body:{action:"connect",server,login,password:pw,acct:active}});
+    if(error){let j=null;try{j=await error.context.json()}catch(e){}mt5Msg=(j&&j.message)||"Could not connect. Check your details and try again."}
+    else{mt5={login,server};mt5Msg="Connected. Your trades will appear in a few minutes.";setTimeout(()=>syncMt5(true),120000)}
+  }catch(e){mt5Msg="Could not connect. Please try again."}
+  render();
+}
+async function disconnectMt5(){
+  if(!mt5Del){mt5Del=true;return render()}
+  mt5Del=false;mt5Msg="Disconnecting…";render();
+  try{
+    const {error}=await sb.functions.invoke("mt5-connect",{body:{action:"disconnect"}});
+    if(error)mt5Msg="Could not disconnect right now.";else{mt5=null;mt5Msg="Disconnected. Trades already imported stay in your journal."}
+  }catch(e){mt5Msg="Could not disconnect right now."}
+  render();
+}
 function autoMt5(){
-  try{if(localStorage.getItem("mt5off"))return;if(Date.now()-Number(localStorage.getItem("mt5last")||0)<9e5)return}catch(e){}
+  try{if(!mt5)return;if(Date.now()-Number(localStorage.getItem("mt5last")||0)<9e5)return}catch(e){}
   syncMt5(true);
 }
 async function syncMt5(silent){
@@ -539,9 +566,8 @@ async function syncMt5(silent){
   try{
     const {data,error}=await sb.functions.invoke("mt5-sync",{body:{acct:active,days:90}});
     if(error){
-      const st=error.context&&error.context.status;
-      if(st===403){try{localStorage.setItem("mt5off","1")}catch(e){}if(!silent)mt5Msg="MT5 sync isn’t enabled for this account."}
-      else if(!silent)mt5Msg="MT5 sync failed. Please try again later.";
+      let j=null;try{j=await error.context.json()}catch(e){}
+      if(!silent)mt5Msg=j&&j.error==="nolink"?"Connect your MT5 account first.":(j&&j.error==="metaapi"&&(j.status===404||j.status===202))?"Your account is still connecting. Try again in a few minutes.":"MT5 sync failed. Please try again later.";
     }else{
       await store.reload(async()=>(await sb.from("journal").select("id,data")).data||[]);
       try{localStorage.setItem("mt5last",String(Date.now()))}catch(e){}
