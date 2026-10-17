@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Gold Trade Journal</title>
+<title>Bigman Capital · Trading Journal</title>
 <style>
 :root{--bg:#f3f5f9;--card:#fff;--tx:#0e1a2e;--mut:#5b6a82;--bd:#dce2ed;--ac:#1e3a8a;--gold:#b8901f;--on:#fff;--g:#0f9d6e;--r:#d64545;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1120;--card:#111b2f;--tx:#e8edf7;--mut:#8d9bb5;--bd:#22304a;--ac:#d4a937;--gold:#d4a937;--on:#0a1120;--g:#2dd4a0;--r:#ff6b6b;color-scheme:dark}}
@@ -42,12 +42,26 @@ label{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px}
 .cal button small{font-size:9px}
 .empty{color:var(--mut);text-align:center;padding:26px 8px}
 svg{width:100%;height:auto;display:block}
+h1{font-size:25px;letter-spacing:.02em}
+body{background:radial-gradient(900px 520px at 85% -8%,color-mix(in srgb,var(--gold) 15%,transparent),transparent),radial-gradient(800px 600px at -10% 35%,color-mix(in srgb,var(--ac) 22%,transparent),transparent),var(--bg);background-attachment:fixed}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#app{position:relative;z-index:1}
+nav{z-index:5;background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:blur(14px)}
+.card{background:color-mix(in srgb,var(--card) 80%,transparent);backdrop-filter:blur(12px);box-shadow:0 8px 30px rgba(0,0,0,.12)}
+.btn{background:linear-gradient(135deg,var(--ac),color-mix(in srgb,var(--ac) 65%,var(--gold)))}
+.btn.s{background:none}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.seg button{padding:10px;border-radius:10px;border:1px solid var(--bd);background:none;color:var(--mut);font:inherit}
+.seg button.on{background:var(--ac);color:var(--on);border-color:var(--ac);font-weight:600}
+.ins{border-left:3px solid var(--bd);padding-left:10px}
+.ins.g{border-color:var(--g)}.ins.r{border-color:var(--r)}
 </style></head>
-<body><div id="app"></div>
+<body><canvas id="bg" aria-hidden="true"></canvas>
+<div id="app"></div>
 <nav id="nav"></nav>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
-const SUPA_URL="PASTE_YOUR_SUPABASE_URL",SUPA_KEY="PASTE_YOUR_ANON_KEY";
+const SUPA_URL="https://gsrjzyqeysuysaqudany.supabase.co",SUPA_KEY="sb_publishable_k8L_rApbnITmnT3wi1VDHg_RDuZfwqn";
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pad=n=>String(n).padStart(2,"0");
@@ -192,7 +206,7 @@ function vAdd(){
   <div><label for="f_mood">Mindset</label><select id="f_mood">${moods.map(m=>`<option value="${m}" ${t.mood===m?"selected":""}>${m||"—"}</option>`).join("")}</select></div></div>
   <label for="f_notes">Notes</label><textarea id="f_notes" placeholder="Why did you take it? What did you learn?">${esc(t.notes||"")}</textarea>
   ${assets?`<label for="f_shot">Screenshot</label><input id="f_shot" type="file" accept="image/*" onchange="upShot(this)"><div class="sub" id="shotmsg">${shot?"Screenshot attached ✓":""}</div>`:""}
-  <div class="err" id="err">${esc(errMsg)}</div>
+  <div class="sub" style="margin-top:8px">For XAUUSD, profit/loss and risk are calculated automatically (100 oz per lot). Type over them if your broker differs.</div><div class="err" id="err">${esc(errMsg)}</div>
   <button class="btn" onclick="submit()">${edit?"Save changes":"Save trade"}</button>
   ${edit?`<button class="btn s" onclick="act('tab','trades')">Cancel</button>`:""}</div>`;
 }
@@ -234,11 +248,44 @@ function act(a,x){
   else if(a==="csv"){csv();return}
   render();
 }
+function bindAuto(){
+  const q=i=>document.getElementById(i);
+  ["f_pnl","f_risk"].forEach(i=>{if(edit&&q(i).value!=="")q(i).dataset.man="1";q(i).addEventListener("input",e=>{if(e.isTrusted)q(i).dataset.man=q(i).value===""?"":"1"})});
+  ["f_sym","f_side","f_lots","f_en","f_ex","f_sl"].forEach(i=>q(i).addEventListener("input",()=>{
+    if(!/^XAU/.test(q("f_sym").value.trim().toUpperCase()))return;
+    const l=+q("f_lots").value,en=+q("f_en").value,ex=+q("f_ex").value,sl=+q("f_sl").value,d=q("f_side").value==="buy"?1:-1;
+    const put=(id,v)=>{const el=q(id);if(el.dataset.man!=="1")el.value=v};
+    if(l>0&&en>0&&ex>0)put("f_pnl",((ex-en)*d*l*100).toFixed(2));
+    if(l>0&&en>0&&sl>0)put("f_risk",(Math.abs(en-sl)*l*100).toFixed(2));
+  }));
+}
+function vIns(){
+  if(trades.length<3)return `<div class="card empty">Log at least 3 trades to unlock automatic insights.</div>`;
+  const s=stats(),o=[],nm=["Sundays","Mondays","Tuesdays","Wednesdays","Thursdays","Fridays","Saturdays"];
+  let st=0,sg=0;
+  for(let i=trades.length-1;i>=0;i--){const p=net(trades[i]),g=p>0?1:p<0?-1:0;if(!g||(sg&&g!==sg))break;sg=g;st++}
+  if(st>=2)o.push([sg>0?"g":"r",`Current streak: ${st} ${sg>0?"wins":"losses"} in a row.`]);
+  const es=Object.entries(s.by).filter(e=>e[0]!=="Untagged").sort((a,b)=>b[1].p-a[1].p);
+  if(es.length)o.push([es[0][1].p>=0?"g":"",`Best setup: ${esc(es[0][0])}, ${money(es[0][1].p)} over ${es[0][1].n} trade${es[0][1].n===1?"":"s"}.`]);
+  if(es.length>1&&es[es.length-1][1].p<0)o.push(["r",`Weakest setup: ${esc(es[es.length-1][0])}, ${money(es[es.length-1][1].p)}. Consider trading it less.`]);
+  const mo={};for(const t of trades)if(t.mood){mo[t.mood]=mo[t.mood]||{n:0,p:0};mo[t.mood].n++;mo[t.mood].p+=net(t)}
+  const me=Object.entries(mo).filter(e=>e[1].n>=2).map(e=>[e[0],e[1].p/e[1].n,e[1].n]).sort((a,b)=>a[1]-b[1]);
+  if(me.length&&me[0][1]<0)o.push(["r",`Trades taken while feeling ${esc(me[0][0].toLowerCase())} average ${money(me[0][1])} (${me[0][2]} trades). Watch that state.`]);
+  if(me.length&&me[me.length-1][1]>0)o.push(["g",`You trade best when ${esc(me[me.length-1][0].toLowerCase())}: ${money(me[me.length-1][1])} per trade on average.`]);
+  const dd=[0,1,2,3,4,5,6].filter(k=>s.wn[k]>=2);
+  if(dd.length>1){dd.sort((a,b)=>s.wd[b]/s.wn[b]-s.wd[a]/s.wn[a]);const b=dd[0],w=dd[dd.length-1];
+    o.push(["g",`Best day: ${nm[b]}, ${money(s.wd[b]/s.wn[b])} per trade.`]);
+    if(s.wd[w]<0)o.push(["r",`Worst day: ${nm[w]}, ${money(s.wd[w]/s.wn[w])} per trade.`])}
+  if(s.pf!==null&&s.pf!==Infinity&&s.pf<1)o.push(["r","Profit factor is below 1.00: losses currently outweigh wins."]);
+  if(s.aw&&s.al&&s.aw/Math.abs(s.al)<1)o.push(["",`Average win is smaller than average loss (ratio ${(s.aw/Math.abs(s.al)).toFixed(2)}). Try letting winners run or cutting losers sooner.`]);
+  return `<h2>Automatic insights</h2>`+o.map(x=>`<div class="card ins ${x[0]}">${x[1]}</div>`).join("")+`<div class="sub">Based on ${trades.length} trades. Insights improve as you log more.</div>`;
+}
 function render(){
-  const names={dash:"Dashboard",trades:"Trades",add:"＋ Add",cal:"Calendar"};
+  const names={dash:"Dashboard",trades:"Trades",add:"＋ Add",cal:"Calendar",ins:"Insights"};
   $("#nav").innerHTML=Object.keys(names).map(k=>`<button class="${tab===k?"on":""}" onclick="act('tab','${k}')">${names[k]}</button>`).join("");
-  const body={dash:vDash,trades:vTrades,add:vAdd,cal:vCal}[tab]();
-  $("#app").innerHTML=`<div class="top"><h1>Gold Trade Journal</h1><span class="sub"><span id="sync">${esc(sync)}</span>${sb&&cloud?` · <a href="#" onclick="signOut();return false" style="color:var(--mut)">Sign out</a>`:""}</span></div>`+body;
+  const body={dash:vDash,trades:vTrades,add:vAdd,cal:vCal,ins:vIns}[tab]();
+  $("#app").innerHTML=`<div class="top"><div><h1>Bigman Capital</h1><div class="sub" style="letter-spacing:.16em;text-transform:uppercase;font-size:10px">Trading Journal</div></div><span class="sub"><span id="sync">${esc(sync)}</span>${sb&&cloud?` · <a href="#" onclick="signOut();return false" style="color:var(--mut)">Sign out</a>`:""}</span></div>`+body;
+  if(tab==="add")bindAuto();
 }
 function mkStore(m,persist){
   const emit=()=>{ingest(Object.keys(m).map(k=>Object.assign({id:k},m[k])));refresh()};
@@ -266,20 +313,99 @@ async function startCloud(session){
   render();
 }
 async function signOut(){await sb.auth.signOut();location.reload()}
-function login(msg){
+let mode="in";
+function m(t,ok){const el=$("#l_m");if(el){el.textContent=t;el.style.color=ok?"var(--g)":"var(--r)"}}
+function login(msg,ok){
   $("#nav").innerHTML="";
-  $("#app").innerHTML=`<div class="top"><h1>Gold Trade Journal</h1></div><div class="card"><h2>Sign in</h2><label for="l_e">Email</label><input id="l_e" type="email" autocomplete="username"><label for="l_p">Password</label><input id="l_p" type="password" autocomplete="current-password"><div class="err" id="l_m">${esc(msg||"")}</div><button class="btn" onclick="doLogin()">Sign in</button></div>`;
+  const up=mode==="up";
+  $("#app").innerHTML=`<div class="top"><div><h1>Bigman Capital</h1><div class="sub" style="letter-spacing:.16em;text-transform:uppercase;font-size:10px">Trading Journal</div></div></div>
+  <div class="card"><div class="seg"><button class="${up?"":"on"}" onclick="mode='in';login()">Sign in</button><button class="${up?"on":""}" onclick="mode='up';login()">Create account</button></div>
+  <div class="sub">${up?"Your own private journal. Your trades are visible only to you and sync to every device you sign in on.":"Welcome back. Sign in to see your journal on this device."}</div>
+  <label for="l_e">Email</label><input id="l_e" type="email" autocomplete="username">
+  <label for="l_p">Password${up?" (8+ characters)":""}</label><input id="l_p" type="password" autocomplete="${up?"new-password":"current-password"}">
+  ${up?`<label for="l_p2">Confirm password</label><input id="l_p2" type="password" autocomplete="new-password">`:""}
+  <div class="err" id="l_m" style="${ok?"color:var(--g)":""}">${esc(msg||"")}</div>
+  <button class="btn" onclick="doAuth()">${up?"Create my account":"Sign in"}</button>
+  ${up?"":`<button class="btn s" onclick="forgot()">Forgot password?</button>`}</div>`;
 }
-async function doLogin(){
-  const {data,error}=await sb.auth.signInWithPassword({email:$("#l_e").value.trim(),password:$("#l_p").value});
-  if(error){login("Sign-in failed: "+error.message);return}
+async function doAuth(){
+  const e=$("#l_e").value.trim(),p=$("#l_p").value;
+  if(!e||!p)return m("Enter your email and password.");
+  if(mode==="up"){
+    if(p.length<8)return m("Use a password of at least 8 characters.");
+    if(p!==$("#l_p2").value)return m("The passwords don’t match.");
+    const {data,error}=await sb.auth.signUp({email:e,password:p});
+    if(error)return m("Sign-up failed: "+error.message);
+    if(data.session)return startCloud(data.session);
+    mode="in";return login("Account created. Check your email to confirm it, then sign in.",1);
+  }
+  const {data,error}=await sb.auth.signInWithPassword({email:e,password:p});
+  if(error)return m("Sign-in failed: "+error.message);
   await startCloud(data.session);
+}
+async function forgot(){
+  const e=$("#l_e").value.trim();if(!e)return m("Enter your email first.");
+  const {error}=await sb.auth.resetPasswordForEmail(e,{redirectTo:location.origin+location.pathname});
+  m(error?error.message:"Reset link sent. Check your email.",!error);
+}
+function resetForm(){
+  $("#nav").innerHTML="";
+  $("#app").innerHTML=`<div class="top"><div><h1>Bigman Capital</h1></div></div><div class="card"><h2>Choose a new password</h2><label for="n_p">New password (8+ characters)</label><input id="n_p" type="password" autocomplete="new-password"><div class="err" id="l_m"></div><button class="btn" onclick="setPw()">Save password</button></div>`;
+}
+async function setPw(){
+  const p=$("#n_p").value;if(p.length<8)return m("Use at least 8 characters.");
+  const {error}=await sb.auth.updateUser({password:p});
+  if(error)return m(error.message);
+  location.replace(location.origin+location.pathname);
 }
 (async()=>{
   const ok=window.supabase&&SUPA_URL.startsWith("https://")&&!SUPA_KEY.startsWith("PASTE");
   if(!ok){startLocal("Preview mode: saved on this device only");render();return}
   sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+  sb.auth.onAuthStateChange(ev=>{if(ev==="PASSWORD_RECOVERY")resetForm()});
   const {data}=await sb.auth.getSession();
   if(data.session)await startCloud(data.session);else login();
 })();
-</script></body></html>
+</script><script>
+(function(){
+  const c=document.getElementById("bg"),x=c.getContext("2d"),reduce=matchMedia("(prefers-reduced-motion:reduce)").matches;
+  let W=0,H=0,step=6,n=0,off=0,S=[];
+  const cfg=[{b:.64,sc:2.6,amp:6,a:.55},{b:.44,sc:1.9,amp:4.5,a:.3},{b:.82,sc:1.4,amp:3,a:.18}];
+  const gold=()=>getComputedStyle(document.documentElement).getPropertyValue("--gold").trim()||"#d4a937";
+  const next=(v,a)=>v+(Math.random()-.5)*a-v*.025;
+  function size(){
+    const d=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0);
+    step=Math.max(5,W/90);n=Math.ceil(W/step)+3;
+    S=cfg.map(k=>{let v=0;const a=[];for(let i=0;i<n;i++){v=next(v,k.amp);a.push(v)}return a});
+  }
+  function path(a,k){
+    x.beginPath();
+    for(let i=0;i<a.length;i++){
+      const px=i*step-off,py=H*k.b-a[i]*k.sc*(H/700);
+      if(!i)x.moveTo(px,py);else{const qx=(i-.5)*step-off,qy=H*k.b-((a[i]+a[i-1])/2)*k.sc*(H/700);x.quadraticCurveTo(qx,qy,px,py)}
+    }
+  }
+  function draw(){
+    x.clearRect(0,0,W,H);
+    x.strokeStyle="rgba(128,140,170,.07)";x.lineWidth=1;
+    for(let i=1;i<8;i++){const y=H*i/8;x.beginPath();x.moveTo(0,y);x.lineTo(W,y);x.stroke()}
+    const col=gold();
+    S.forEach((a,j)=>{
+      const k=cfg[j],gx=x.createLinearGradient(0,0,W,0);
+      gx.addColorStop(0,"transparent");gx.addColorStop(.25,col);gx.addColorStop(.75,col);gx.addColorStop(1,"transparent");
+      path(a,k);x.strokeStyle=gx;x.globalAlpha=k.a;x.lineWidth=j?1.2:1.8;x.stroke();
+      x.lineTo(W+step,H);x.lineTo(-step,H);x.closePath();
+      const gy=x.createLinearGradient(0,H*k.b-90,0,H);gy.addColorStop(0,col);gy.addColorStop(1,"transparent");
+      x.globalAlpha=k.a*.16;x.fillStyle=gy;x.fill();x.globalAlpha=1;
+    });
+  }
+  function tick(){
+    off+=.3;
+    while(off>=step){off-=step;S.forEach((a,j)=>{a.shift();a.push(next(a[a.length-1],cfg[j].amp))})}
+    draw();requestAnimationFrame(tick);
+  }
+  size();addEventListener("resize",()=>{size();draw()});
+  draw();if(!reduce)requestAnimationFrame(tick);
+})();
+</script>
+</body></html>
