@@ -211,7 +211,7 @@ function startCard(){
   <label for="f_an">Account name</label><input id="f_an" value="${esc(a.name)}" onchange="renameAcct(this.value)">
   <label for="f_start">Starting balance ($)</label><input id="f_start" type="number" inputmode="decimal" step="any" min="0" value="${esc(a.start||"")}" onchange="setStart(this.value)">
   <div class="row2" style="margin-top:12px"><input id="f_new" placeholder="New account name"><button class="btn sm" style="width:100%" onclick="addAcct()">Add account</button></div>
-  ${sb?`<label for="f_name">Your name</label><input id="f_name" value="${esc(uname)}" onchange="setName(this.value)">`:""}${instBlock()}</div>`;
+  ${sb?`<label for="f_name">Your name</label><input id="f_name" value="${esc(uname)}" onchange="setName(this.value)">`:""}${sb?`<button class="btn s" onclick="syncMt5()">Sync MT5 trades</button><div class="sub" style="margin-top:6px">${esc(mt5Msg)}</div>`:""}${instBlock()}</div>`;
 }
 function setName(v){uname=v.trim();if(sb)sb.auth.updateUser({data:{name:uname}})}
 function setStart(v){
@@ -222,11 +222,12 @@ function setStart(v){
 
 function tradeCard(t){
   const p=net(t),conf=delId===t.id;
-  return `<div class="card"><div class="tr"><div><b>${esc(t.symbol)}</b> <span class="badge">${t.side==="buy"?"BUY":"SELL"}</span><div class="sub">${esc(t.date.replace("T"," "))} · ${t.lots} lot${t.lots===1?"":"s"}</div></div><div style="text-align:right"><b class="${cls(p)}" style="font-size:18px">${money(p)}</b>${t.risk>0?`<div class="sub">${(p/t.risk).toFixed(2)}R</div>`:""}</div></div>
+  return `<div class="card"><div class="tr"><div><b>${esc(t.symbol)}</b> <span class="badge">${t.side==="buy"?"BUY":"SELL"}</span>${t.mt5?` <span class="badge" style="color:var(--gold)">MT5</span>`:""}<div class="sub">${esc(t.date.replace("T"," "))} · ${t.lots} lot${t.lots===1?"":"s"}</div></div><div style="text-align:right"><b class="${cls(p)}" style="font-size:18px">${money(p)}</b>${t.risk>0?`<div class="sub">${(p/t.risk).toFixed(2)}R</div>`:""}</div></div>
   <div class="tags">${t.entry} → ${t.exit}${t.sl?` · SL ${t.sl}`:""}${t.tp?` · TP ${t.tp}`:""}${t.fees?` · fees ${money(t.fees)}`:""}</div>
   ${(t.setup||t.mood)?`<div class="tags">${[t.setup,t.mood].filter(Boolean).map(esc).join(" · ")}</div>`:""}
   ${t.notes?`<div style="margin-top:8px;white-space:pre-wrap">${esc(t.notes)}</div>`:""}
   ${t.shot&&!/^https?:/.test(t.shot)?`<img class="shot" data-p="${esc(t.shot)}" alt="Trade chart" onclick="openShot(this)">`:""}${t.link?`<div><a class="btn s sm" style="display:inline-block;margin-top:8px;text-decoration:none;color:var(--tx)" href="${esc(t.link)}" target="_blank" rel="noopener noreferrer">Open chart ↗</a></div>`:""}
+  ${t.mt5&&!t.notes?`<div class="sub" style="margin-top:8px;color:var(--gold)">Synced from MT5. Tap Edit to add your reason for entry.</div>`:""}
   <div class="acts"><button class="btn s sm" onclick="act('edit','${t.id}')">Edit</button><button class="btn s sm" style="${conf?"color:var(--r);border-color:var(--r)":""}" onclick="act('del','${t.id}')">${conf?"Tap again to delete":"Delete"}</button></div></div>`;
 }
 function vTrades(){
@@ -308,7 +309,7 @@ async function loadShots(){
 function openShot(im){if(im.src)window.open(im.src,"_blank","noopener")}
 async function submit(){
   const g=id=>document.getElementById(id).value.trim(),num=id=>g(id)===""?null:Number(g(id));
-  const t={acct:active,date:g("f_date"),symbol:symVal(),side:g("f_side"),lots:num("f_lots"),entry:num("f_en"),exit:num("f_ex"),pnl:num("f_pnl"),fees:g("f_fee")===""?0:Number(g("f_fee")),sl:num("f_sl"),tp:num("f_tp"),risk:num("f_risk"),setup:g("f_setup"),mood:g("f_mood"),notes:g("f_notes"),shot,link:g("f_link")};
+  const t={acct:active,date:g("f_date"),symbol:symVal(),side:g("f_side"),lots:num("f_lots"),entry:num("f_en"),exit:num("f_ex"),pnl:num("f_pnl"),fees:g("f_fee")===""?0:Number(g("f_fee")),sl:num("f_sl"),tp:num("f_tp"),risk:num("f_risk"),setup:g("f_setup"),mood:g("f_mood"),notes:g("f_notes"),shot,link:g("f_link"),mt5:edit&&edit.mt5?true:undefined};
   const bad=[];
   if(!t.date)bad.push("date & time");
   if(!t.symbol)bad.push("symbol");
@@ -445,22 +446,24 @@ function journalSummary(){
 }
 async function askNow(t){
   const el=document.getElementById("q"),q=(t||(el?el.value:"")).trim().slice(0,400);if(!q)return;
+  const hist=chat.slice(-6).filter(c=>c.a&&c.a!=="Thinking…").map(c=>({q:c.q.slice(0,400),a:c.a.slice(0,1200)}));
   const item={q,a:"Thinking…"};chat.push(item);render();window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
-  let a=null;
-  if(sb&&cloud&&trades.length){
+  let a=null,why="";
+  if(sb&&cloud){
     try{
-      const {data,error}=await sb.functions.invoke("ask-journal",{body:{question:q,summary:journalSummary()}});
+      const {data,error}=await sb.functions.invoke("ask-journal",{body:{question:q,summary:journalSummary(),history:hist}});
       if(!error&&data&&data.answer)a=data.answer;
-      else if(error&&error.context&&error.context.status===429)a="You’ve used today’s AI questions. Here is the built-in answer instead:\n"+answer(q);
-    }catch(e){}
+      else if(error&&error.context&&error.context.status===429)why="You’ve used today’s AI questions, so here is a built-in answer instead:\n";
+      else why="The AI isn’t reachable right now, so here is a built-in answer instead:\n";
+    }catch(e){why="The AI isn’t reachable right now, so here is a built-in answer instead:\n"}
   }
-  item.a=a||answer(q);render();
+  item.a=a||why+answer(q);render();
 }
 function vIns(){
-  const ask=`<div class="card"><h2>Ask your journal</h2><div class="chips">${["How am I doing this month?","What is my best setup?","Which day should I avoid?","How can I improve?","What is my drawdown?"].map(x=>`<button onclick="askNow('${x}')">${x}</button>`).join("")}</div>
+  const ask=`<div class="card"><h2>Ask anything</h2><div class="chips">${["How am I doing this month?","What is my best setup?","Which day should I avoid?","How can I improve?","What is my drawdown?"].map(x=>`<button onclick="askNow('${x}')">${x}</button>`).join("")}</div>
   <div class="chat">${chat.map(c=>`<div class="q">${esc(c.q)}</div><div class="a">${esc(c.a)}</div>`).join("")}</div>
-  <div style="display:flex;gap:8px"><input id="q" placeholder="Ask anything about your trades…" onkeydown="if(event.key==='Enter')askNow()"><button class="btn sm" onclick="askNow()" style="padding:0 16px">Ask</button></div>
-  <div class="sub" style="margin-top:8px">Questions are answered by AI using a summary of your trades (pair, size, result, setup and mood; your notes are never sent). If AI is unavailable, built-in answers are used.</div></div>`;
+  <div style="display:flex;gap:8px"><input id="q" placeholder="Ask anything…" onkeydown="if(event.key==='Enter')askNow()"><button class="btn sm" onclick="askNow()" style="padding:0 16px">Ask</button></div>
+  <div class="sub" style="margin-top:8px">Ask about your trades or any trading topic. Answers come from AI, which also sees a summary of your trades (pair, size, result, setup and mood; your notes are never sent).</div></div>`;
   if(trades.length<3)return `<div class="card empty">Log at least 3 trades to unlock your AI analysis.</div>`+posCard()+ask;
   const s=stats(),sc=score(s),lab=sc>=75?"Elite":sc>=55?"Solid":sc>=35?"Developing":"Needs work";
   return `<div class="rings">${ring(sc,sc>=55?"--g":sc>=35?"--ac":"--r",sc,"Discipline · "+lab)}${ring(s.wr,"--g",s.wr.toFixed(0)+"%","Win rate")}</div>
@@ -498,7 +501,8 @@ function mkStore(m,persist){
   emit();
   return {
     put:async(k,o)=>{m[k]=o;emit();await persist("put",k,o)},
-    del:async k=>{delete m[k];emit();await persist("del",k)}
+    del:async k=>{delete m[k];emit();await persist("del",k)},
+    reload:async fn=>{const rows=await fn();for(const k of Object.keys(m))delete m[k];for(const r of rows)m[r.id]=r.data;emit()}
   };
 }
 function startLocal(msg){
@@ -518,6 +522,29 @@ async function startCloud(session){
     if(r.error)throw{code:r.error.code||"error"};
   });
   render();
+  autoMt5();
+}
+let mt5Msg="";
+function autoMt5(){
+  try{if(localStorage.getItem("mt5off"))return;if(Date.now()-Number(localStorage.getItem("mt5last")||0)<9e5)return}catch(e){}
+  syncMt5(true);
+}
+async function syncMt5(silent){
+  if(!sb||!cloud||!store)return;
+  if(!silent){mt5Msg="Syncing…";render()}
+  try{
+    const {data,error}=await sb.functions.invoke("mt5-sync",{body:{acct:active,days:90}});
+    if(error){
+      const st=error.context&&error.context.status;
+      if(st===403){try{localStorage.setItem("mt5off","1")}catch(e){}if(!silent)mt5Msg="MT5 sync isn’t enabled for this account."}
+      else if(!silent)mt5Msg="MT5 sync failed. Please try again later.";
+    }else{
+      await store.reload(async()=>(await sb.from("journal").select("id,data")).data||[]);
+      try{localStorage.setItem("mt5last",String(Date.now()))}catch(e){}
+      if(!silent)mt5Msg=`Synced: ${(data&&data.imported)||0} new, ${(data&&data.updated)||0} updated.`;
+    }
+  }catch(e){if(!silent)mt5Msg="MT5 sync failed. Please try again later."}
+  if(!silent)render();
 }
 async function signOut(){await sb.auth.signOut();location.reload()}
 let mode="in";
