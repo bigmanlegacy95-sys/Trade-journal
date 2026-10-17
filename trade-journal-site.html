@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gold Trade Journal</title>
+<style>
+:root{--bg:#f3f5f9;--card:#fff;--tx:#0e1a2e;--mut:#5b6a82;--bd:#dce2ed;--ac:#1e3a8a;--gold:#b8901f;--on:#fff;--g:#0f9d6e;--r:#d64545;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1120;--card:#111b2f;--tx:#e8edf7;--mut:#8d9bb5;--bd:#22304a;--ac:#d4a937;--gold:#d4a937;--on:#0a1120;--g:#2dd4a0;--r:#ff6b6b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0a1120;--card:#111b2f;--tx:#e8edf7;--mut:#8d9bb5;--bd:#22304a;--ac:#d4a937;--gold:#d4a937;--on:#0a1120;--g:#2dd4a0;--r:#ff6b6b;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#app{max-width:640px;margin:0 auto;padding:16px 14px 100px}
+h1{font:600 21px Georgia,"Times New Roman",serif;margin:0;color:var(--gold)}
+h2{font:600 15px system-ui,sans-serif;margin:0 0 10px}
+.top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;gap:8px}
+.sub{color:var(--mut);font-size:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.k{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.v{font-size:20px;font-weight:600;margin-top:2px}
+.g{color:var(--g)}.r{color:var(--r)}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}
+nav button{flex:1;background:none;border:0;color:var(--mut);font:inherit;font-size:12px;padding:8px 0}
+nav button.on{color:var(--ac);font-weight:700}
+input,select,textarea{width:100%;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx)}
+textarea{min-height:90px;resize:vertical}
+label{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{background:var(--ac);color:var(--on);border:0;border-radius:10px;padding:12px;font:inherit;font-weight:600;width:100%;margin-top:14px}
+.btn.s{background:none;color:var(--tx);border:1px solid var(--bd);margin-top:8px}
+.btn.sm{width:auto;padding:7px 12px;margin:0;font-size:13px}
+.err{color:var(--r);font-size:13px;margin-top:10px}
+.tr{display:flex;justify-content:space-between;gap:10px}
+.badge{font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px;border:1px solid var(--bd);color:var(--mut)}
+.tags{color:var(--mut);font-size:12px;margin-top:4px}
+.acts{display:flex;gap:8px;margin-top:10px}
+.shot{max-width:100%;max-height:150px;border-radius:8px;margin-top:8px;border:1px solid var(--bd)}
+.bar{height:8px;border-radius:4px;background:var(--g);min-width:2px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal .h{font-size:10px;color:var(--mut);text-align:center}
+.cal button{aspect-ratio:1;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit;font-size:11px;padding:2px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.cal button.sel{outline:2px solid var(--ac)}
+.cal button small{font-size:9px}
+.empty{color:var(--mut);text-align:center;padding:26px 8px}
+svg{width:100%;height:auto;display:block}
+</style></head>
+<body><div id="app"></div>
+<nav id="nav"></nav>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const SUPA_URL="PASTE_YOUR_SUPABASE_URL",SUPA_KEY="PASTE_YOUR_ANON_KEY";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad=n=>String(n).padStart(2,"0");
+const money=n=>(n<0?"−":"")+"$"+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const cls=n=>n>0?"g":n<0?"r":"";
+let trades=[],reviews={},cfg={start:0},tab="dash",edit=null,delId=null,shot="",errMsg="";
+let calM=new Date(new Date().getFullYear(),new Date().getMonth(),1),selDay=null;
+let sb=null,sync="Connecting…",store=null,assets=null,dl=null,cloud=false,rt=null;
+const net=t=>t.pnl-(t.fees||0);
+
+function ingest(docs){
+  trades=[];reviews={};cfg={start:0};
+  for(const d of docs){
+    if(d.id.startsWith("t_"))trades.push(d);
+    else if(d.id.startsWith("d_"))reviews[d.date]=d.text||"";
+    else if(d.id==="cfg")cfg=Object.assign({start:0},d);
+  }
+  trades.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+}
+function refresh(){
+  const a=document.activeElement;
+  if(tab==="add"||(a&&/^(TEXTAREA|INPUT|SELECT)$/.test(a.tagName)))badge();else render();
+}
+function badge(){const b=$("#sync");if(b)b.textContent=sync}
+async function save(k,o){
+  sync="Saving…";badge();
+  try{await store.put(k,o);sync=cloud?"Saved to cloud":"Saved on this device"}
+  catch(e){sync="Save failed ("+((e&&e.code)||"error")+")"}
+  badge();
+}
+async function remove(k){
+  try{await store.del(k);sync=cloud?"Saved to cloud":"Saved on this device"}
+  catch(e){sync="Delete failed ("+((e&&e.code)||"error")+")"}
+  badge();
+}
+
+function stats(){
+  const n=trades.length,start=Number(cfg.start)||0;
+  let eq=start,peak=start,dd=0,ddp=0,gw=0,gl=0,w=0,sr=0,rc=0;
+  const pts=[start],by={},wd=[0,0,0,0,0,0,0],wn=[0,0,0,0,0,0,0];
+  for(const t of trades){
+    const p=net(t);eq+=p;pts.push(eq);
+    if(eq>peak)peak=eq;
+    const d=peak-eq;if(d>dd){dd=d;ddp=peak>0?d/peak*100:0}
+    if(p>0){gw+=p;w++}else if(p<0)gl+=-p;
+    if(t.risk>0){sr+=p/t.risk;rc++}
+    const dd0=new Date(t.date).getDay();if(!isNaN(dd0)){wd[dd0]+=p;wn[dd0]++}const s=t.setup||"Untagged";by[s]=by[s]||{n:0,p:0};by[s].n++;by[s].p+=p;
+  }
+  const total=eq-start;
+  return {n,total,eq,wr:n?w/n*100:0,pf:gl>0?gw/gl:(gw>0?Infinity:null),
+    aw:w?gw/w:0,al:(n-w)?-gl/(n-w):0,ex:n?total/n:0,dd,ddp,r:rc?sr/rc:null,pts,by,wd,wn,
+    best:n?Math.max(...trades.map(net)):0,worst:n?Math.min(...trades.map(net)):0};
+}
+function curve(pts){
+  if(pts.length<2)return "";
+  const W=320,H=120,mn=Math.min(...pts),mx=Math.max(...pts),rg=(mx-mn)||1;
+  const xy=pts.map((v,i)=>[(i/(pts.length-1))*W,H-6-((v-mn)/rg)*(H-12)]);
+  const line=xy.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Equity curve"><polygon points="0,${H} ${line} ${W},${H}" fill="var(--ac)" opacity=".13"/><polyline points="${line}" fill="none" stroke="var(--ac)" stroke-width="2" stroke-linejoin="round"/></svg>`;
+}
+
+function vDash(){
+  const s=stats();
+  const pf=s.pf===null?"—":(s.pf===Infinity?"∞":s.pf.toFixed(2));
+  let h=`<div class="card"><div class="k">Net profit / loss</div><div class="v ${cls(s.total)}" style="font-size:30px">${money(s.total)}</div><div class="sub">${s.n} trade${s.n===1?"":"s"} · balance ${money(s.eq)}</div></div>`;
+  if(!s.n)return h+`<div class="card empty">No trades yet. Tap <b>Add</b> to log your first one.</div>`+startCard();
+  h+=`<div class="card">${curve(s.pts)}</div><div class="grid">`;
+  const c=(k,v,x)=>`<div class="card" style="margin:0"><div class="k">${k}</div><div class="v ${x||""}">${v}</div></div>`;
+  h+=c("Win rate",s.wr.toFixed(1)+"%")+c("Profit factor",pf)+c("Avg win",money(s.aw),"g")+c("Avg loss",money(s.al),"r")
+   +c("Expectancy",money(s.ex),cls(s.ex))+c("Avg R",s.r===null?"—":s.r.toFixed(2)+"R",s.r?cls(s.r):"")
+   +c("Max drawdown",(s.dd?"−":"")+money(s.dd)+(s.ddp?` (${s.ddp.toFixed(1)}%)`:""),s.dd?"r":"")+c("Best / worst",money(s.best)+" / "+money(s.worst))
+   +`</div><div class="card" style="margin-top:12px"><h2>By setup</h2>`;
+  const ent=Object.entries(s.by).sort((a,b)=>b[1].p-a[1].p),mx=Math.max(...ent.map(e=>Math.abs(e[1].p)))||1;
+  for(const [k,v] of ent)h+=`<div style="margin-bottom:10px"><div class="tr"><span>${esc(k)} <span class="sub">· ${v.n}</span></span><b class="${cls(v.p)}">${money(v.p)}</b></div><div class="bar" style="width:${Math.max(2,Math.abs(v.p)/mx*100)}%;background:var(${v.p<0?"--r":"--g"})"></div></div>`;
+  h+=`</div><div class="card"><h2>By weekday</h2>`;
+  const nm=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],mw=Math.max(...s.wd.map(Math.abs))||1;
+  for(let i=1;i<=6;i++){const k=i%7;if(!s.wn[k])continue;h+=`<div style="margin-bottom:10px"><div class="tr"><span>${nm[k]} <span class="sub">· ${s.wn[k]}</span></span><b class="${cls(s.wd[k])}">${money(s.wd[k])}</b></div><div class="bar" style="width:${Math.max(2,Math.abs(s.wd[k])/mw*100)}%;background:var(${s.wd[k]<0?"--r":"--g"})"></div></div>`}
+  return h+`</div>`+startCard();
+}
+function startCard(){
+  return `<div class="card"><h2>Account</h2><label for="f_start">Starting balance ($)</label><input id="f_start" type="number" inputmode="decimal" step="any" min="0" value="${esc(cfg.start||"")}" onchange="setStart(this.value)"><div class="sub" style="margin-top:8px">Used for balance and drawdown. Leave empty for 0.</div></div>`;
+}
+function setStart(v){
+  const n=v===""?0:Number(v);
+  if(!isFinite(n)||n<0)return;
+  cfg={start:n};save("cfg",{start:n});
+}
+
+function tradeCard(t){
+  const p=net(t),conf=delId===t.id;
+  return `<div class="card"><div class="tr"><div><b>${esc(t.symbol)}</b> <span class="badge">${t.side==="buy"?"BUY":"SELL"}</span><div class="sub">${esc(t.date.replace("T"," "))} · ${t.lots} lot${t.lots===1?"":"s"}</div></div><div style="text-align:right"><b class="${cls(p)}" style="font-size:18px">${money(p)}</b>${t.risk>0?`<div class="sub">${(p/t.risk).toFixed(2)}R</div>`:""}</div></div>
+  <div class="tags">${t.entry} → ${t.exit}${t.sl?` · SL ${t.sl}`:""}${t.tp?` · TP ${t.tp}`:""}${t.fees?` · fees ${money(t.fees)}`:""}</div>
+  ${(t.setup||t.mood)?`<div class="tags">${[t.setup,t.mood].filter(Boolean).map(esc).join(" · ")}</div>`:""}
+  ${t.notes?`<div style="margin-top:8px;white-space:pre-wrap">${esc(t.notes)}</div>`:""}
+  ${t.shot?`<a href="${esc(t.shot)}" target="_blank" rel="noopener"><img class="shot" src="${esc(t.shot)}" alt="Trade screenshot"></a>`:""}
+  <div class="acts"><button class="btn s sm" onclick="act('edit','${t.id}')">Edit</button><button class="btn s sm" style="${conf?"color:var(--r);border-color:var(--r)":""}" onclick="act('del','${t.id}')">${conf?"Tap again to delete":"Delete"}</button></div></div>`;
+}
+function vTrades(){
+  let h=`<div class="tr" style="margin-bottom:12px;align-items:center"><h2 style="margin:0">All trades</h2>${trades.length?`<button class="btn s sm" onclick="act('csv')">Export CSV</button>`:""}</div>`;
+  if(!trades.length)return h+`<div class="card empty">Nothing here yet.</div>`;
+  return h+trades.slice().reverse().map(tradeCard).join("");
+}
+
+function vCal(){
+  const y=calM.getFullYear(),m=calM.getMonth(),first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
+  const day={};for(const t of trades){const k=t.date.slice(0,10);day[k]=(day[k]||0)+net(t)}
+  let mt=0;for(let d=1;d<=days;d++)mt+=day[`${y}-${pad(m+1)}-${pad(d)}`]||0;
+  let h=`<div class="card"><div class="tr" style="align-items:center;margin-bottom:10px"><button class="btn s sm" onclick="act('mon',-1)" aria-label="Previous month">‹</button><div style="text-align:center"><b>${calM.toLocaleDateString(undefined,{month:"long",year:"numeric"})}</b><div class="sub ${cls(mt)}">${money(mt)}</div></div><button class="btn s sm" onclick="act('mon',1)" aria-label="Next month">›</button></div><div class="cal">`;
+  for(const d of ["S","M","T","W","T","F","S"])h+=`<div class="h">${d}</div>`;
+  for(let i=0;i<first;i++)h+=`<div></div>`;
+  for(let d=1;d<=days;d++){
+    const k=`${y}-${pad(m+1)}-${pad(d)}`,v=day[k],bg=v==null?"":`background:color-mix(in srgb,var(${v>=0?"--g":"--r"}) 24%,var(--bg))`;
+    h+=`<button class="${k===selDay?"sel":""}" style="${bg}" onclick="act('day','${k}')">${d}${v==null?"":`<small class="${cls(v)}">${Math.abs(v)>=1000?(v/1000).toFixed(1)+"k":Math.round(v)}</small>`}</button>`;
+  }
+  h+=`</div></div>`;
+  if(selDay){
+    const dt=trades.filter(t=>t.date.slice(0,10)===selDay);
+    h+=`<div class="card"><h2>${esc(selDay)} · ${money(day[selDay]||0)}</h2>`+(dt.length?dt.map(t=>`<div class="tr" style="margin-bottom:6px"><span>${esc(t.symbol)} ${t.side==="buy"?"buy":"sell"} · ${t.lots}</span><b class="${cls(net(t))}">${money(net(t))}</b></div>`).join(""):`<div class="sub">No trades this day.</div>`)
+     +`<label for="f_rev">Daily review</label><textarea id="f_rev" placeholder="What went well? What would you change?" oninput="reviewInput(this.value)">${esc(reviews[selDay]||"")}</textarea></div>`;
+  }else h+=`<div class="sub" style="text-align:center">Tap a day to see its trades and write a review.</div>`;
+  return h;
+}
+function reviewInput(v){
+  const k=selDay;clearTimeout(rt);
+  rt=setTimeout(()=>save("d_"+k,{date:k,text:v}),600);
+}
+
+function vAdd(){
+  const t=edit||{date:new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16),symbol:"XAUUSD",side:"buy"};
+  const f=(id,l,v,ex)=>`<div><label for="${id}">${l}</label><input id="${id}" type="number" inputmode="decimal" step="any" value="${v==null?"":esc(v)}" ${ex||""}></div>`;
+  const setups=[...new Set(trades.map(x=>x.setup).filter(Boolean))];
+  const moods=["","Calm","Confident","Anxious","FOMO","Revenge","Greedy","Bored","Tired"];
+  return `<div class="card"><h2>${edit?"Edit trade":"New trade"}</h2>
+  <label for="f_date">Date &amp; time</label><input id="f_date" type="datetime-local" value="${esc(t.date)}">
+  <div class="row2"><div><label for="f_sym">Symbol</label><input id="f_sym" value="${esc(t.symbol)}" autocapitalize="characters"></div>
+  <div><label for="f_side">Direction</label><select id="f_side"><option value="buy" ${t.side==="buy"?"selected":""}>Buy</option><option value="sell" ${t.side==="sell"?"selected":""}>Sell</option></select></div></div>
+  <div class="row2">${f("f_lots","Lots",t.lots)}${f("f_pnl","Profit / loss ($)",t.pnl)}</div>
+  <div class="row2">${f("f_en","Entry price",t.entry)}${f("f_ex","Exit price",t.exit)}</div>
+  <div class="row2">${f("f_sl","Stop loss (optional)",t.sl)}${f("f_tp","Take profit (optional)",t.tp)}</div>
+  <div class="row2">${f("f_fee","Fees / swap ($)",t.fees)}${f("f_risk","Risk amount ($, for R)",t.risk)}</div>
+  <div class="row2"><div><label for="f_setup">Setup</label><input id="f_setup" list="setups" value="${esc(t.setup||"")}" placeholder="e.g. Breakout"><datalist id="setups">${setups.map(s=>`<option value="${esc(s)}">`).join("")}</datalist></div>
+  <div><label for="f_mood">Mindset</label><select id="f_mood">${moods.map(m=>`<option value="${m}" ${t.mood===m?"selected":""}>${m||"—"}</option>`).join("")}</select></div></div>
+  <label for="f_notes">Notes</label><textarea id="f_notes" placeholder="Why did you take it? What did you learn?">${esc(t.notes||"")}</textarea>
+  ${assets?`<label for="f_shot">Screenshot</label><input id="f_shot" type="file" accept="image/*" onchange="upShot(this)"><div class="sub" id="shotmsg">${shot?"Screenshot attached ✓":""}</div>`:""}
+  <div class="err" id="err">${esc(errMsg)}</div>
+  <button class="btn" onclick="submit()">${edit?"Save changes":"Save trade"}</button>
+  ${edit?`<button class="btn s" onclick="act('tab','trades')">Cancel</button>`:""}</div>`;
+}
+async function upShot(inp){
+  const f=inp.files&&inp.files[0],m=$("#shotmsg");if(!f)return;
+  if(m)m.textContent="Uploading…";
+  try{const r=await assets.upload(f);shot=r.url;if(m)m.textContent="Screenshot attached ✓"}
+  catch(e){if(m)m.textContent="Upload failed ("+((e&&e.code)||"error")+")"}
+}
+async function submit(){
+  const g=id=>document.getElementById(id).value.trim(),num=id=>g(id)===""?null:Number(g(id));
+  const t={date:g("f_date"),symbol:g("f_sym").toUpperCase(),side:g("f_side"),lots:num("f_lots"),entry:num("f_en"),exit:num("f_ex"),pnl:num("f_pnl"),fees:g("f_fee")===""?0:Number(g("f_fee")),sl:num("f_sl"),tp:num("f_tp"),risk:num("f_risk"),setup:g("f_setup"),mood:g("f_mood"),notes:g("f_notes"),shot};
+  const bad=[];
+  if(!t.date)bad.push("date & time");
+  if(!t.symbol)bad.push("symbol");
+  for(const [k,l] of [["lots","lots"],["entry","entry price"],["exit","exit price"]])if(!(t[k]>0))bad.push(l+" (must be above 0)");
+  if(t.pnl===null||!isFinite(t.pnl))bad.push("profit / loss");
+  for(const [k,l] of [["fees","fees"],["sl","stop loss"],["tp","take profit"],["risk","risk amount"]])if(t[k]!==null&&(!isFinite(t[k])||t[k]<0))bad.push(l+" (invalid)");
+  if(bad.length){errMsg="Please check: "+bad.join(", ")+".";$("#err").textContent=errMsg;return}
+  errMsg="";
+  const id=edit?edit.id:"t_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  edit=null;shot="";tab="trades";render();
+  await save(id,t);
+}
+function csv(){
+  const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  const cols=["date","symbol","side","lots","entry","exit","sl","tp","pnl","fees","risk","setup","mood","notes"];
+  const rows=[cols.join(",")].concat(trades.map(t=>cols.map(c=>q(t[c])).join(",")));
+  const data=rows.join("\n");
+  if(dl){dl.save({filename:"trades.csv",data}).catch(()=>{});return}
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:"text/csv"}));a.download="trades.csv";document.body.appendChild(a);a.click();a.remove();
+}
+function act(a,x){
+  if(a==="tab"){tab=x;edit=null;delId=null;shot="";errMsg=""}
+  else if(a==="edit"){edit=trades.find(t=>t.id===x)||null;shot=edit&&edit.shot||"";tab="add"}
+  else if(a==="del"){if(delId===x){delId=null;remove(x)}else delId=x}
+  else if(a==="mon"){calM=new Date(calM.getFullYear(),calM.getMonth()+x,1)}
+  else if(a==="day"){selDay=x}
+  else if(a==="csv"){csv();return}
+  render();
+}
+function render(){
+  const names={dash:"Dashboard",trades:"Trades",add:"＋ Add",cal:"Calendar"};
+  $("#nav").innerHTML=Object.keys(names).map(k=>`<button class="${tab===k?"on":""}" onclick="act('tab','${k}')">${names[k]}</button>`).join("");
+  const body={dash:vDash,trades:vTrades,add:vAdd,cal:vCal}[tab]();
+  $("#app").innerHTML=`<div class="top"><h1>Gold Trade Journal</h1><span class="sub"><span id="sync">${esc(sync)}</span>${sb&&cloud?` · <a href="#" onclick="signOut();return false" style="color:var(--mut)">Sign out</a>`:""}</span></div>`+body;
+}
+function mkStore(m,persist){
+  const emit=()=>{ingest(Object.keys(m).map(k=>Object.assign({id:k},m[k])));refresh()};
+  emit();
+  return {
+    put:async(k,o)=>{m[k]=o;emit();await persist("put",k,o)},
+    del:async k=>{delete m[k];emit();await persist("del",k)}
+  };
+}
+function startLocal(msg){
+  let m={};try{m=JSON.parse(localStorage.getItem("tj")||"{}")}catch(e){}
+  sync=msg||"This device only";
+  store=mkStore(m,async()=>{try{localStorage.setItem("tj",JSON.stringify(m))}catch(e){throw{code:"storage"}}});
+}
+async function startCloud(session){
+  const uid=session.user.id;
+  const {data,error}=await sb.from("journal").select("id,data");
+  if(error){sync="Cloud error ("+(error.code||"load")+")";startLocal(sync);return}
+  const m={};for(const r of data)m[r.id]=r.data;
+  cloud=true;sync="Saved to cloud";
+  store=mkStore(m,async(op,k,o)=>{
+    const r=op==="put"?await sb.from("journal").upsert({user_id:uid,id:k,data:o}):await sb.from("journal").delete().eq("id",k);
+    if(r.error)throw{code:r.error.code||"error"};
+  });
+  render();
+}
+async function signOut(){await sb.auth.signOut();location.reload()}
+function login(msg){
+  $("#nav").innerHTML="";
+  $("#app").innerHTML=`<div class="top"><h1>Gold Trade Journal</h1></div><div class="card"><h2>Sign in</h2><label for="l_e">Email</label><input id="l_e" type="email" autocomplete="username"><label for="l_p">Password</label><input id="l_p" type="password" autocomplete="current-password"><div class="err" id="l_m">${esc(msg||"")}</div><button class="btn" onclick="doLogin()">Sign in</button></div>`;
+}
+async function doLogin(){
+  const {data,error}=await sb.auth.signInWithPassword({email:$("#l_e").value.trim(),password:$("#l_p").value});
+  if(error){login("Sign-in failed: "+error.message);return}
+  await startCloud(data.session);
+}
+(async()=>{
+  const ok=window.supabase&&SUPA_URL.startsWith("https://")&&!SUPA_KEY.startsWith("PASTE");
+  if(!ok){startLocal("Preview mode: saved on this device only");render();return}
+  sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+  const {data}=await sb.auth.getSession();
+  if(data.session)await startCloud(data.session);else login();
+})();
+</script></body></html>
