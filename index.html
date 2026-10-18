@@ -98,9 +98,45 @@ nav button.on{background:linear-gradient(135deg,var(--gold),color-mix(in srgb,va
 .br{margin-bottom:12px}.br:last-child{margin-bottom:0}
 .rowt{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bd)}
 .rowt:last-of-type{border-bottom:0}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#080d16;--card:#111b2b;--tx:#f3f7ff;--mut:#96a5bb;--bd:rgba(150,170,200,.14);--ac:#16d9a0;--on:#06231b;--g:#22d3a0;--r:#ff647c;--warn:#ffbe62;--cy:#35c9ff;--vi:#9270ff}}
+:root[data-theme="dark"]{--bg:#080d16;--card:#111b2b;--tx:#f3f7ff;--mut:#96a5bb;--bd:rgba(150,170,200,.14);--ac:#16d9a0;--on:#06231b;--g:#22d3a0;--r:#ff647c;--warn:#ffbe62;--cy:#35c9ff;--vi:#9270ff}
+:root{--warn:#c98a12;--cy:#1593c4;--vi:#6d4fd8}
+.v,.big,.tile .v,.rowt b,.tr b,.chips2 b,#eqt{font-variant-numeric:tabular-nums}
+.btn{background:linear-gradient(135deg,var(--ac),var(--cy))}
+.btn.s,.btn.sm.s{background:none}
+nav button.on{background:linear-gradient(135deg,#16d9a0,#35c9ff);box-shadow:0 6px 18px rgba(22,217,160,.35)}
+.seg button.on{background:linear-gradient(135deg,#16d9a0,#35c9ff);border-color:transparent}
+.card,.tile{transition:transform .2s,border-color .2s,box-shadow .2s}
+.card:hover,.tile:hover{transform:translateY(-2px);border-color:rgba(22,217,160,.35)}
+.eqp{display:flex;gap:6px;margin:10px 0 6px}
+.eqp button{border:1px solid var(--bd);background:none;color:var(--mut);border-radius:99px;padding:5px 12px;font:inherit;font-size:12px}
+.eqp button.on{color:var(--on);background:var(--ac);border-color:var(--ac);font-weight:600}
+.eqt{font-size:12px;color:var(--mut);min-height:18px;margin-top:4px}
+svg path.draw{stroke-dasharray:1;stroke-dashoffset:1;animation:dr .9s ease forwards}
+@keyframes dr{to{stroke-dashoffset:0}}
+.meter{height:8px;border-radius:4px;background:var(--bd);overflow:hidden;margin:6px 0 4px}
+.meter i{display:block;height:100%;border-radius:4px;transition:width .6s}
+.sk{position:relative;overflow:hidden;min-height:110px;border-radius:20px;background:var(--card);border:1px solid var(--bd)}
+.sk::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);transform:translateX(-100%);animation:sh 1.3s infinite}
+@keyframes sh{to{transform:translateX(100%)}}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.view.in>*{animation:rise .32s both}
+.view.in>*:nth-child(2){animation-delay:.04s}.view.in>*:nth-child(3){animation-delay:.08s}.view.in>*:nth-child(4){animation-delay:.12s}.view.in>*:nth-child(n+5){animation-delay:.16s}
+#toasts{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:30;display:flex;flex-direction:column;gap:8px;width:min(92vw,360px)}
+.toast{background:var(--card);border:1px solid var(--bd);border-left:3px solid var(--g);padding:10px 14px;border-radius:12px;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.4);animation:rise .25s both}
+.toast.err{border-left-color:var(--r)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
+@media(min-width:900px){
+  nav{left:18px;top:18px;bottom:18px;right:auto;transform:none;width:88px;max-width:none;flex-direction:column;justify-content:flex-start;padding:10px 8px;border-radius:24px}
+  nav button{padding:14px 0}
+  #app{max-width:1080px;margin:0 0 0 126px;padding:26px 30px 48px}
+  .tiles{grid-template-columns:repeat(6,1fr)}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body><canvas id="bg" aria-hidden="true"></canvas>
+<div id="toasts" aria-live="polite"></div>
 <div id="app"></div>
 <nav id="nav"></nav>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -115,11 +151,11 @@ const money=n=>(n<0?"−":"")+"$"+Math.abs(n).toLocaleString(undefined,{minimumF
 const cls=n=>n>0?"g":n<0?"r":"";
 let trades=[],reviews={},cfg={start:0},tab="dash",edit=null,delId=null,shot="",errMsg="";
 let calM=new Date(new Date().getFullYear(),new Date().getMonth(),1),selDay=null;
-let uidG="",dp=null,all=[],accts=[],active="",uname="",sb=null,sync="Connecting…",store=null,assets=null,dl=null,cloud=false,rt=null;
+let loading=true,eqR="ALL",eqAnim=true,pageAnim=true,eqPts=[],eqXY=[],tf={q:"",res:"all",sym:""},uidG="",dp=null,all=[],accts=[],active="",uname="",sb=null,sync="Connecting…",store=null,assets=null,dl=null,cloud=false,rt=null;
 const net=t=>t.pnl-(t.fees||0);
 
 function ingest(docs){
-  trades=[];reviews={};cfg={start:0};
+  loading=false;trades=[];reviews={};cfg={start:0};
   for(const d of docs){
     if(d.id.startsWith("t_"))trades.push(d);
     else if(d.id.startsWith("d_"))reviews[d.date]=d.text||"";
@@ -144,13 +180,13 @@ function refresh(){
 function badge(){const b=$("#sync");if(b)b.textContent=sync}
 async function save(k,o){
   sync="";badge();
-  try{await store.put(k,o);sync=cloud?"":""}
-  catch(e){sync="Save failed ("+((e&&e.code)||"error")+")"}
-  badge();
+  try{await store.put(k,o)}
+  catch(e){sync="Save failed ("+((e&&e.code)||"error")+")";badge();toast("Could not save. Check your connection and try again.","err");return}
+  badge();if(String(k).startsWith("t_"))toast("Trade saved");
 }
 async function remove(k){
-  try{await store.del(k);sync=cloud?"":""}
-  catch(e){sync="Delete failed ("+((e&&e.code)||"error")+")"}
+  try{await store.del(k);toast("Trade deleted")}
+  catch(e){sync="Delete failed ("+((e&&e.code)||"error")+")";badge();toast("Could not delete. Try again.","err");return}
   badge();
 }
 
@@ -184,17 +220,19 @@ function bars(ent){
   return ent.map(([k,n,p])=>`<div class="br"><div class="tr"><span>${esc(k)} <span class="sub">· ${n}</span></span><b class="${cls(p)}">${money(p)}</b></div><div class="bar" style="width:${Math.max(2,Math.abs(p)/mx*100)}%;background:var(${p<0?"--r":"--g"})"></div></div>`).join("");
 }
 function vDash(){
+  if(loading)return skel();
   const s=stats(),a=accts.find(x=>x.id===active)||{name:"",start:0};
-  if(!s.n)return `<div class="hero"><div class="k">${esc(a.name)} · balance</div><div class="big">${money(s.eq)}</div><div class="sub">No trades yet. Tap Add to log your first one.</div></div>`+startCard();
+  if(!s.n)return `<div class="hero"><div class="k">${esc(a.name)} · balance</div><div class="big">${cu(s.eq,"m","bal")}</div><div class="sub">No trades yet. Tap Add to log your first one.</div></div>`+startCard();
   const tk=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10),wk=Date.now()-7*864e5;
   const td=trades.filter(t=>t.date.slice(0,10)===tk).reduce((p,t)=>p+net(t),0),wp=trades.filter(t=>new Date(t.date).getTime()>=wk).reduce((p,t)=>p+net(t),0);
   const st=Number(a.start)||0,ret=st>0?s.total/st*100:null,pf=s.pf===null?"—":s.pf===Infinity?"∞":s.pf.toFixed(2);
   const tile=(k,v,x)=>`<div class="tile"><div class="k">${k}</div><div class="v ${x||""}">${v}</div></div>`;
-  let h=`<div class="hero"><div class="k">${esc(a.name)} · balance</div><div class="big">${money(s.eq)}</div>
+  let h=`<div class="hero"><div class="k">${esc(a.name)} · balance</div><div class="big">${cu(s.eq,"m","bal")}</div>
   <div class="${cls(s.total)}" style="font-weight:600">${s.total>=0?"▲":"▼"} ${money(Math.abs(s.total))}${ret!==null?` (${ret.toFixed(1)}%)`:""} <span class="sub">all time</span></div>
-  <div style="margin-top:10px">${curve(s.pts)}</div>
+  <div style="margin-top:10px">${eqChart(s)}</div>
   <div class="chips2"><span>Today <b class="${cls(td)}">${money(td)}</b></span><span>7 days <b class="${cls(wp)}">${money(wp)}</b></span><span>${s.n} trades</span></div></div>`;
-  h+=`<div class="tiles">${tile("Win rate",s.wr.toFixed(1)+"%")}${tile("Profit factor",pf)}${tile("Expectancy",money(s.ex),cls(s.ex))}${tile("Avg win",money(s.aw),"g")}${tile("Avg loss",money(s.al),"r")}${tile("Max drawdown",(s.dd?"−":"")+money(s.dd),s.dd?"r":"")}</div>`;
+  h+=`<div class="tiles">${tile("Win rate",cu(s.wr,"p","wr"))}${tile("Profit factor",s.pf!==null&&isFinite(s.pf)?cu(s.pf,"n","pf"):pf)}${tile("Expectancy",cu(s.ex,"m","ex"),cls(s.ex))}${tile("Avg win",cu(s.aw,"m","aw"),"g")}${tile("Avg loss",cu(s.al,"m","al"),"r")}${tile("Max drawdown",(s.dd?"−":"")+cu(s.dd,"m","dd"),s.dd?"r":"")}</div>`;
+  h+=riskCard(s,a,td);
   h+=`<div class="sec">Recent trades</div><div class="card">${trades.slice(-5).reverse().map(t=>`<div class="rowt"><div><b>${esc(t.symbol)}</b> <span class="badge">${t.side==="buy"?"BUY":"SELL"}</span><div class="sub">${esc(t.date.slice(0,16).replace("T"," "))}</div></div><b class="${cls(net(t))}">${money(net(t))}</b></div>`).join("")}<button class="btn s" onclick="act('tab','trades')">View all trades</button></div>`;
   const pr={};for(const t of trades){pr[t.symbol]=pr[t.symbol]||[0,0];pr[t.symbol][0]++;pr[t.symbol][1]+=net(t)}
   const pe=Object.entries(pr).map(([k,v])=>[k,v[0],v[1]]).sort((x,y)=>Math.abs(y[2])-Math.abs(x[2])).slice(0,6);
@@ -210,6 +248,7 @@ function startCard(){
   return `<div class="card"><h2>Trading accounts</h2><div class="chips">${accts.map(x=>`<button style="${x.id===active?"background:var(--gold);color:var(--on);border-color:var(--gold);font-weight:600":""}" onclick="switchAcct('${x.id}')">${esc(x.name)}</button>`).join("")}</div>
   <label for="f_an">Account name</label><input id="f_an" value="${esc(a.name)}" onchange="renameAcct(this.value)">
   <label for="f_start">Starting balance ($)</label><input id="f_start" type="number" inputmode="decimal" step="any" min="0" value="${esc(a.start||"")}" onchange="setStart(this.value)">
+  <h2 style="margin-top:16px">Risk rules</h2><div class="row2"><div><label for="f_dl">Daily loss limit (%)</label><input id="f_dl" type="number" step="any" inputmode="decimal" min="0" max="100" value="${a.dl||""}" onchange="setRule('dl',this.value)"></div><div><label for="f_dd">Max drawdown (%)</label><input id="f_dd" type="number" step="any" inputmode="decimal" min="0" max="100" value="${a.dd||""}" onchange="setRule('dd',this.value)"></div></div><div class="row2"><div><label for="f_pt">Profit target (%)</label><input id="f_pt" type="number" step="any" inputmode="decimal" min="0" max="100" value="${a.pt||""}" onchange="setRule('pt',this.value)"></div><div><label for="f_ddt">Drawdown type</label><select id="f_ddt" onchange="setRule('ddt',this.value)"><option value="static" ${a.ddt==="trail"?"":"selected"}>Static</option><option value="trail" ${a.ddt==="trail"?"selected":""}>Trailing</option></select></div></div>
   <div class="row2" style="margin-top:12px"><input id="f_new" placeholder="New account name"><button class="btn sm" style="width:100%" onclick="addAcct()">Add account</button></div>
   ${sb?`<label for="f_name">Your name</label><input id="f_name" value="${esc(uname)}" onchange="setName(this.value)">`:""}${instBlock()}</div>`;
 }
@@ -229,10 +268,20 @@ function tradeCard(t){
   ${t.shot&&!/^https?:/.test(t.shot)?`<img class="shot" data-p="${esc(t.shot)}" alt="Trade chart" onclick="openShot(this)">`:""}${t.link?`<div><a class="btn s sm" style="display:inline-block;margin-top:8px;text-decoration:none;color:var(--tx)" href="${esc(t.link)}" target="_blank" rel="noopener noreferrer">Open chart ↗</a></div>`:""}
   <div class="acts"><button class="btn s sm" onclick="act('edit','${t.id}')">Edit</button><button class="btn s sm" style="${conf?"color:var(--r);border-color:var(--r)":""}" onclick="act('del','${t.id}')">${conf?"Tap again to delete":"Delete"}</button></div></div>`;
 }
+function tlist(){
+  const q=tf.q.toLowerCase();
+  const L=trades.slice().reverse().filter(t=>(!tf.sym||t.symbol===tf.sym)&&(tf.res==="all"||(tf.res==="win"?net(t)>0:net(t)<0))&&(!q||[t.symbol,t.setup,t.mood,t.notes].join(" ").toLowerCase().includes(q)));
+  const html=L.length?`<div class="sub" style="margin-bottom:8px">${L.length} trade${L.length===1?"":"s"} · ${money(L.reduce((a,t)=>a+net(t),0))}</div>`+L.map(tradeCard).join(""):`<div class="card empty">No trades match these filters.</div>`;
+  const el=document.getElementById("tl");if(el){el.innerHTML=html;loadShots()}
+  return html;
+}
+function setTf(k,v){tf[k]=v;if(k==="res")render();else tlist()}
 function vTrades(){
-  let h=`<div class="tr" style="margin-bottom:12px;align-items:center"><h2 style="margin:0">All trades</h2>${trades.length?`<button class="btn s sm" onclick="act('csv')">Export CSV</button>`:""}</div>`;
+  const syms=[...new Set(trades.map(t=>t.symbol))].sort();
+  let h=`<div class="tr" style="margin-bottom:12px;align-items:center"><h2 style="margin:0">Trades</h2>${trades.length?`<button class="btn s sm" onclick="act('csv')">Export CSV</button>`:""}</div>`;
   if(!trades.length)return h+`<div class="card empty">Nothing here yet.</div>`;
-  return h+trades.slice().reverse().map(tradeCard).join("");
+  h+=`<input id="tq" type="search" placeholder="Search pair, setup, notes…" value="${esc(tf.q)}" oninput="setTf('q',this.value)" style="margin-bottom:8px" aria-label="Search trades"><div class="row2" style="margin-bottom:10px"><select onchange="setTf('sym',this.value)" aria-label="Pair filter"><option value="">All pairs</option>${syms.map(x=>`<option ${x===tf.sym?"selected":""}>${esc(x)}</option>`).join("")}</select><div class="seg" style="margin:0;grid-template-columns:repeat(3,1fr)">${[["all","All"],["win","Wins"],["loss","Losses"]].map(([k,l])=>`<button class="${tf.res===k?"on":""}" onclick="setTf('res','${k}')">${l}</button>`).join("")}</div></div>`;
+  return h+`<div id="tl">${tlist()}</div>`;
 }
 
 function vCal(){
@@ -331,7 +380,7 @@ function csv(){
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:"text/csv"}));a.download="trades.csv";document.body.appendChild(a);a.click();a.remove();
 }
 function act(a,x){
-  if(a==="tab"){tab=x;edit=null;delId=null;shot="";errMsg=""}
+  if(a==="tab"){tab=x;pageAnim=true;eqAnim=true;edit=null;delId=null;shot="";errMsg=""}
   else if(a==="edit"){edit=trades.find(t=>t.id===x)||null;shot=edit&&edit.shot||"";tab="add"}
   else if(a==="del"){if(delId===x){delId=null;const tt=trades.find(z=>z.id===x);if(tt&&tt.shot&&sb)sb.storage.from("charts").remove([tt.shot]);remove(x)}else delId=x}
   else if(a==="mon"){calM=new Date(calM.getFullYear(),calM.getMonth()+x,1)}
@@ -361,6 +410,62 @@ function instBlock(){
   return "";
 }
 async function installApp(){if(!dp)return;dp.prompt();try{await dp.userChoice}catch(e){}dp=null;render()}
+function toast(m,kind){const c=document.getElementById("toasts");if(!c)return;const d=document.createElement("div");d.className="toast "+(kind||"");d.setAttribute("role",kind==="err"?"alert":"status");d.textContent=m;c.appendChild(d);setTimeout(()=>d.remove(),2800)}
+function cu(v,t,k){const x=Number(v),txt=t==="m"?money(x):t==="p"?x.toFixed(1)+"%":x.toFixed(2);return `<span class="cu" data-v="${x}" data-t="${t}" data-k="${k}">${txt}</span>`}
+function animateNums(){
+  if(matchMedia("(prefers-reduced-motion:reduce)").matches)return;
+  const pv=window.__pv=window.__pv||{};
+  document.querySelectorAll(".cu").forEach(el=>{
+    const v=Number(el.dataset.v),t=el.dataset.t,k=el.dataset.k,from=pv[k]===undefined?0:pv[k];pv[k]=v;
+    if(from===v||!isFinite(v))return;
+    const fmt=x=>t==="m"?money(x):t==="p"?x.toFixed(1)+"%":x.toFixed(2),t0=performance.now();
+    (function step(n){const p=Math.min(1,(n-t0)/650),e=1-Math.pow(1-p,3);if(p<1&&el.isConnected){el.textContent=fmt(from+(v-from)*e);requestAnimationFrame(step)}else el.textContent=fmt(v)})(t0);
+  });
+}
+function skel(){return `<div class="sk" style="min-height:230px;margin-bottom:14px"></div><div class="tiles">${'<div class="sk" style="min-height:64px;border-radius:14px"></div>'.repeat(6)}</div>`}
+function eqRange(r){eqR=r;eqAnim=true;render()}
+function eqMove(e){
+  if(!eqXY.length)return;
+  const r=e.currentTarget.getBoundingClientRect(),i=Math.max(0,Math.min(eqPts.length-1,Math.round((e.clientX-r.left)/r.width*(eqPts.length-1)))),p=eqPts[i],xy=eqXY[i];
+  const g=document.getElementById("eqx"),l=document.getElementById("eql"),c=document.getElementById("eqc"),t=document.getElementById("eqt");
+  if(!g)return;g.style.display="block";l.setAttribute("x1",xy[0]);l.setAttribute("x2",xy[0]);c.setAttribute("cx",xy[0]);c.setAttribute("cy",xy[1]);
+  t.textContent=p.l+"  ·  "+money(p.v);
+}
+function eqLeave(){const g=document.getElementById("eqx"),t=document.getElementById("eqt");if(g)g.style.display="none";if(t)t.textContent="Hover or tap the chart for exact values"}
+function eqChart(s){
+  const st=Number((accts.find(x=>x.id===active)||{}).start)||0,days={"1W":7,"1M":30,"3M":90}[eqR];
+  const cut=days?new Date(Date.now()-days*864e5).toISOString().slice(0,10):"";
+  let e=st,started=false;const pts=[];
+  for(const t of trades){const b=e;e+=net(t);if(!cut||t.date.slice(0,10)>=cut){if(!started){pts.push({l:"Start of range",v:b});started=true}pts.push({l:t.date.slice(0,16).replace("T"," "),v:e})}}
+  eqPts=pts;eqXY=[];
+  const an=eqAnim;eqAnim=false;
+  const pills=`<div class="eqp" role="group" aria-label="Chart range">${["1W","1M","3M","ALL"].map(r=>`<button class="${eqR===r?"on":""}" aria-pressed="${eqR===r}" onclick="eqRange('${r}')">${r==="ALL"?"All":r}</button>`).join("")}</div>`;
+  if(pts.length<2)return pills+`<div class="sub" style="padding:22px 0;text-align:center">Not enough trades in this range to draw a curve.</div>`;
+  const W=320,H=130,mn=Math.min(...pts.map(p=>p.v)),mx=Math.max(...pts.map(p=>p.v)),rg=(mx-mn)||1;
+  pts.forEach((p,i)=>eqXY.push([+(i/(pts.length-1)*W).toFixed(1),+(H-8-((p.v-mn)/rg)*(H-18)).toFixed(1)]));
+  const line=eqXY.map((q,i)=>(i?"L":"M")+q[0]+","+q[1]).join(" ");
+  return pills+`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Equity curve" style="touch-action:pan-y;cursor:crosshair" onpointermove="eqMove(event)" onpointerdown="eqMove(event)" onpointerleave="eqLeave()"><defs><linearGradient id="eqg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16d9a0" stop-opacity=".35"/><stop offset="1" stop-color="#16d9a0" stop-opacity="0"/></linearGradient></defs><path d="${line} L${W},${H} L0,${H} Z" fill="url(#eqg)"/><path class="${an?"draw":""}" pathLength="1" d="${line}" fill="none" stroke="#16d9a0" stroke-width="2.2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/><g id="eqx" style="display:none"><line id="eql" y1="0" y2="${H}" stroke="rgba(150,170,200,.45)" stroke-width="1" vector-effect="non-scaling-stroke"/><circle id="eqc" r="4" fill="#16d9a0" stroke="#080d16" stroke-width="2"/></g></svg><div class="eqt" id="eqt">Hover or tap the chart for exact values</div>`;
+}
+function setRule(k,v){
+  const a=accts.find(x=>x.id===active);if(!a)return;
+  if(k==="ddt")a.ddt=v==="trail"?"trail":"static";
+  else{const n=v===""?0:Number(v);if(!isFinite(n)||n<0||n>100)return;a[k]=n}
+  commitCfg(active);
+}
+function meter(label,pct,detail,good){
+  const p=Math.max(0,pct);let c,st;
+  if(good){c="--g";st=p>=100?"Target reached":"In progress"}else{c=p>=90?"--r":p>=70?"--warn":"--g";st=p>=90?"Critical":p>=70?"Warning":"OK"}
+  return `<div class="br"><div class="tr"><span>${label}</span><b style="color:var(${c})">${p.toFixed(0)}% · ${st}</b></div><div class="meter"><i style="width:${Math.min(100,p)}%;background:var(${c})"></i></div><div class="sub">${detail}</div></div>`;
+}
+function riskCard(s,a,td){
+  const st=Number(a.start)||0;
+  if(!(st>0)||!(a.dl||a.dd||a.pt))return `<div class="sec">Risk center</div><div class="card"><div class="sub">Set a starting balance and your daily loss, drawdown and profit-target rules under Accounts &amp; settings (bottom of this page) to track them here.</div></div>`;
+  let h="";
+  if(a.dl){const lim=st*a.dl/100,u=Math.max(0,-td);h+=meter("Daily loss",u/lim*100,`${money(u)} of ${money(lim)} used today`)}
+  if(a.dd){const lim=st*a.dd/100,u=a.ddt==="trail"?s.dd:Math.max(0,st-Math.min(...s.pts));h+=meter(a.ddt==="trail"?"Max drawdown (trailing)":"Max drawdown (static)",u/lim*100,`${money(u)} of ${money(lim)}`)}
+  if(a.pt){const tg=st*a.pt/100;h+=meter("Profit target",Math.max(0,s.total)/tg*100,`${money(Math.max(0,s.total))} of ${money(tg)}`,true)}
+  return `<div class="sec">Risk center</div><div class="card">${h}<div class="sub" style="margin-top:6px">Calculated from the trades you log. Check your firm’s own rules; this does not guarantee you stay within them.</div></div>`;
+}
 function hi(){const h=new Date().getHours();return h<12?"Good morning":h<17?"Good afternoon":"Good evening"}
 function bindAuto(){
   const q=i=>document.getElementById(i);
@@ -567,9 +672,9 @@ function render(){
   const ic={dash:"🏠",trades:"📒",add:"＋",cal:"🗓",ins:"🧠"};
   $("#nav").innerHTML=Object.keys(names).map(k=>`<button class="${tab===k?"on":""}" onclick="act('tab','${k}')"><i>${ic[k]}</i>${names[k]}</button>`).join("");
   const body={dash:vDash,trades:vTrades,add:vAdd,cal:vCal,ins:vIns}[tab]();
-  $("#app").innerHTML=`<div class="top"><div><h1>Bigman Capital</h1><div class="hello">${uname?`${hi()}, <b>${esc(uname)}</b> 👋`:"Trading Journal"}</div></div><span class="sub">${accts.length>1?`<select class="acs" onchange="switchAcct(this.value)">${accts.map(a=>`<option value="${a.id}" ${a.id===active?"selected":""}>${esc(a.name)}</option>`).join("")}</select>`:""}<span id="sync">${esc(sync)}</span>${sb&&cloud?` · <a href="#" onclick="signOut();return false" style="color:var(--mut)">Sign out</a>`:""}</span></div>`+body;
-  if(tab==="add")bindAuto();
-  loadShots();
+  $("#app").innerHTML=`<div class="top"><div><h1>Bigman Capital</h1><div class="hello">${uname?`${hi()}, <b>${esc(uname)}</b> 👋`:"Trading Journal"}</div></div><span class="sub">${accts.length>1?`<select class="acs" onchange="switchAcct(this.value)">${accts.map(a=>`<option value="${a.id}" ${a.id===active?"selected":""}>${esc(a.name)}</option>`).join("")}</select>`:""}<span id="sync">${esc(sync)}</span>${sb&&cloud?` · <a href="#" onclick="signOut();return false" style="color:var(--mut)">Sign out</a>`:""}</span></div>`+`<div class="view${pageAnim?" in":""}">${body}</div>`;
+  pageAnim=false;if(tab==="add")bindAuto();
+  loadShots();animateNums();
 }
 function mkStore(m,persist){
   const emit=()=>{ingest(Object.keys(m).map(k=>Object.assign({id:k},m[k])));refresh()};
