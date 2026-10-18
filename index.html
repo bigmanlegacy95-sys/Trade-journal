@@ -141,6 +141,16 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .dayrow:last-of-type{border-bottom:0}
 .kv{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--bd)}
 .kv:last-child{border:0}
+.ib{background:none;border:1px solid var(--bd);border-radius:50%;width:34px;height:34px;font-size:15px;color:var(--tx);margin-left:6px;padding:0;cursor:pointer;vertical-align:middle}
+.sw{position:relative;width:46px;height:26px;flex:none}
+.sw input{appearance:none;-webkit-appearance:none;width:46px;height:26px;border-radius:99px;background:var(--bd);margin:0;padding:0;border:0;transition:.2s;cursor:pointer;display:block}
+.sw input:checked{background:var(--ac)}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;pointer-events:none}
+.sw:has(input:checked)::after{transform:translateX(20px)}
+:root{--ac:#0a8f6b;--gold:#a87f10}
+:root[data-theme="light"] #bg{opacity:.3}
+@media(prefers-color-scheme:light){:root:not([data-theme="dark"]) #bg{opacity:.3}}
+html.rm *,html.rm *::before,html.rm *::after{animation:none!important;transition:none!important}
 </style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body><canvas id="bg" aria-hidden="true"></canvas>
@@ -155,7 +165,25 @@ function mountTs(){if(!TS_KEY||!window.turnstile||!document.getElementById("ts")
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pad=n=>String(n).padStart(2,"0");
-const money=n=>(n<0?"−":"")+"$"+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+let CUR="$",HIDE=false;
+const money=n=>HIDE?"••••":(n<0?"−":"")+CUR+Math.abs(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const DEF={theme:"system",bg:true,rm:false,hide:false,cur:"$",pair:"XAUUSD",lot:"",start:"dash"};
+function loadS(){try{return Object.assign({},DEF,JSON.parse(localStorage.getItem("bm_set")||"{}"))}catch(e){return Object.assign({},DEF)}}
+let S=loadS();
+function saveS(){try{localStorage.setItem("bm_set",JSON.stringify(S))}catch(e){}}
+function applySettings(){
+  const r=document.documentElement;
+  if(S.theme==="system")delete r.dataset.theme;else r.dataset.theme=S.theme;
+  r.classList.toggle("rm",!!S.rm);
+  CUR=S.cur==null?"$":S.cur;HIDE=!!S.hide;
+  const b=document.getElementById("bg");if(b)b.style.display=S.bg?"block":"none";
+  window.__bgOff=!S.bg||!!S.rm;
+  const dark=S.theme==="dark"||(S.theme==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);
+  const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",dark?"#080d16":"#eef1f7");
+}
+function setS(k,v){S[k]=v;saveS();applySettings();render()}
+function toggleHide(){setS("hide",!S.hide)}
+function resetS(){S=Object.assign({},DEF);saveS();applySettings();render();toast("Settings reset")}
 const cls=n=>n>0?"g":n<0?"r":"";
 let trades=[],reviews={},cfg={start:0},tab="dash",edit=null,delId=null,shot="",errMsg="";
 let calM=new Date(new Date().getFullYear(),new Date().getMonth(),1),selDay=null;
@@ -322,7 +350,7 @@ function reviewInput(v){
 }
 
 function vAdd(){
-  const t=edit||{date:new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16),symbol:"XAUUSD",side:"buy"};
+  const t=edit||{date:new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16),symbol:S.pair||"XAUUSD",side:"buy",lots:S.lot||null};
   const f=(id,l,v,ex)=>`<div><label for="${id}">${l}</label><input id="${id}" type="number" inputmode="decimal" step="any" value="${v==null?"":esc(v)}" ${ex||""}></div>`;
   const setups=[...new Set(trades.map(x=>x.setup).filter(Boolean))];
   const moods=["","Calm","Confident","Anxious","FOMO","Revenge","Greedy","Bored","Tired"];
@@ -428,7 +456,7 @@ async function installApp(){if(!dp)return;dp.prompt();try{await dp.userChoice}ca
 function toast(m,kind){const c=document.getElementById("toasts");if(!c)return;const d=document.createElement("div");d.className="toast "+(kind||"");d.setAttribute("role",kind==="err"?"alert":"status");d.textContent=m;c.appendChild(d);setTimeout(()=>d.remove(),2800)}
 function cu(v,t,k){const x=Number(v),txt=t==="m"?money(x):t==="p"?x.toFixed(1)+"%":x.toFixed(2);return `<span class="cu" data-v="${x}" data-t="${t}" data-k="${k}">${txt}</span>`}
 function animateNums(){
-  if(matchMedia("(prefers-reduced-motion:reduce)").matches)return;
+  if(S.rm||matchMedia("(prefers-reduced-motion:reduce)").matches)return;
   const pv=window.__pv=window.__pv||{};
   document.querySelectorAll(".cu").forEach(el=>{
     const v=Number(el.dataset.v),t=el.dataset.t,k=el.dataset.k,from=pv[k]===undefined?0:pv[k];pv[k]=v;
@@ -511,6 +539,16 @@ function vDetail(){
   h+=`<div class="acts" style="margin-top:4px"><button class="btn s sm" onclick="act('edit','${t.id}')">Edit</button><button class="btn s sm" style="${conf?"color:var(--r);border-color:var(--r)":""}" onclick="act('del','${t.id}')">${conf?"Tap again to delete":"Delete"}</button></div>`;
   h+=`<div class="tr" style="margin-top:14px">${i>0?`<button class="btn s sm" onclick="openTrade('${trades[i-1].id}')">‹ Older</button>`:"<span></span>"}${i<trades.length-1?`<button class="btn s sm" onclick="openTrade('${trades[i+1].id}')">Newer ›</button>`:"<span></span>"}</div>`;
   return h;
+}
+function swt(k,l,d){return `<div class="kv" style="align-items:center"><div><div>${l}</div><div class="sub">${d}</div></div><label class="sw"><input type="checkbox" role="switch" aria-label="${l}" ${S[k]?"checked":""} onchange="setS('${k}',this.checked)"></label></div>`}
+function vSettings(){
+  const seg=(k,o)=>`<div class="seg" style="grid-template-columns:repeat(${o.length},1fr)">${o.map(([v,l])=>`<button class="${S[k]===v?"on":""}" onclick="setS('${k}','${v}')">${l}</button>`).join("")}</div>`;
+  const sel=(k,o)=>`<select onchange="setS('${k}',this.value)">${o.map(([v,l])=>`<option value="${esc(v)}" ${String(S[k])===String(v)?"selected":""}>${esc(l)}</option>`).join("")}</select>`;
+  return `<div class="tr" style="align-items:center;margin-bottom:12px"><h2 style="margin:0">Settings</h2></div>
+  <div class="card"><h2>Appearance</h2><label>Theme</label>${seg("theme",[["system","System"],["dark","Dark"],["light","Light"]])}${swt("bg","Animated chart background","Moving candlesticks behind the app")}${swt("rm","Reduce motion","Turns off animations and the moving background")}</div>
+  <div class="card"><h2>Privacy</h2>${swt("hide","Hide balances","Replaces money amounts with dots. Also on the eye button at the top.")}</div>
+  <div class="card"><h2>Trading defaults</h2><label>Currency symbol</label>${sel("cur",[["$","$ Dollar"],["€","€ Euro"],["£","£ Pound"],["¥","¥ Yen"],["","None"]])}<label>Default pair for new trades</label>${sel("pair",ALLP.map(p=>[p,p]))}<label for="s_lot">Default lot size</label><input id="s_lot" type="number" step="any" min="0" inputmode="decimal" value="${esc(S.lot)}" onchange="setS('lot',this.value===''?'':Math.max(0,Number(this.value)||0))"><label>Open the app on</label>${sel("start",[["dash","Home"],["trades","Trades"],["cal","Calendar"],["ins","AI"]])}</div>
+  <div class="card"><h2>Data &amp; account</h2>${trades.length?`<button class="btn s" onclick="act('csv')">Export trades (CSV)</button>`:""}${instBlock()}${sb?`<button class="btn s" onclick="signOut()">Sign out</button>`:""}<button class="btn s" onclick="resetS()">Reset settings</button><div class="sub" style="margin-top:10px">Appearance, privacy and default settings are saved on this device. Your trades and accounts sync with your login.</div></div>`;
 }
 function hi(){const h=new Date().getHours();return h<12?"Good morning":h<17?"Good afternoon":"Good evening"}
 function bindAuto(){
@@ -717,8 +755,8 @@ function render(){
   const names={dash:"Home",trades:"Trades",add:"Add",cal:"Calendar",ins:"AI"};
   const ic={dash:"🏠",trades:"📒",add:"＋",cal:"🗓",ins:"🧠"};
   $("#nav").innerHTML=Object.keys(names).map(k=>`<button class="${tab===k?"on":""}" onclick="act('tab','${k}')"><i>${ic[k]}</i>${names[k]}</button>`).join("");
-  const body={dash:vDash,trades:vTrades,add:vAdd,cal:vCal,ins:vIns,detail:vDetail}[tab]();
-  $("#app").innerHTML=`<div class="top"><div><h1>Bigman Capital</h1><div class="hello">${uname?`${hi()}, <b>${esc(uname)}</b> 👋`:"Trading Journal"}</div></div><span class="sub">${accts.length>1?`<select class="acs" onchange="switchAcct(this.value)">${accts.map(a=>`<option value="${a.id}" ${a.id===active?"selected":""}>${esc(a.name)}</option>`).join("")}</select>`:""}<span id="sync">${esc(sync)}</span>${sb&&cloud?` · <a href="#" onclick="signOut();return false" style="color:var(--mut)">Sign out</a>`:""}</span></div>`+`<div class="view${pageAnim?" in":""}">${body}</div>`;
+  const body={dash:vDash,trades:vTrades,add:vAdd,cal:vCal,ins:vIns,detail:vDetail,settings:vSettings}[tab]();
+  $("#app").innerHTML=`<div class="top"><div><h1>Bigman Capital</h1><div class="hello">${uname?`${hi()}, <b>${esc(uname)}</b> 👋`:"Trading Journal"}</div></div><span class="sub">${accts.length>1?`<select class="acs" onchange="switchAcct(this.value)">${accts.map(a=>`<option value="${a.id}" ${a.id===active?"selected":""}>${esc(a.name)}</option>`).join("")}</select>`:""}<span id="sync">${esc(sync)}</span><button class="ib" onclick="toggleHide()" aria-label="${S.hide?"Show balances":"Hide balances"}" title="${S.hide?"Show balances":"Hide balances"}">${S.hide?"🙈":"👁"}</button><button class="ib" onclick="act('tab','settings')" aria-label="Settings" title="Settings">⚙</button></span></div>`+`<div class="view${pageAnim?" in":""}">${body}</div>`;
   pageAnim=false;if(tab==="add")bindAuto();
   loadShots();animateNums();
 }
@@ -801,6 +839,7 @@ async function setPw(){
   location.replace(location.origin+location.pathname);
 }
 (async()=>{
+  applySettings();if(["dash","trades","cal","ins"].includes(S.start))tab=S.start;
   const ok=window.supabase&&SUPA_URL.startsWith("https://")&&!SUPA_KEY.startsWith("PASTE");
   if(!ok){startLocal("Preview mode: saved on this device only");render();return}
   sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
@@ -851,6 +890,7 @@ async function setPw(){
     x.fillStyle=m;x.fillRect(0,0,W,H);
   }
   function frame(t){
+    if(window.__bgOff){last=t;requestAnimationFrame(frame);return}
     const dt=Math.min(250,t-last||16);last=t;acc+=dt;
     while(acc>=120){acc-=120;tick()}
     off*=.92;if(off<.05)off=0;
