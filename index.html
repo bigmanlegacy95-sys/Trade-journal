@@ -183,7 +183,7 @@ nav button{min-width:0}
 .tag{display:inline-block;border:1px solid var(--bd);border-radius:99px;padding:2px 9px;font-size:11px;color:var(--mut);margin:4px 4px 0 0}
 .fab{display:none;position:fixed;right:16px;bottom:calc(98px + env(safe-area-inset-bottom,0px));width:54px;height:54px;border-radius:50%;border:0;z-index:6;align-items:center;justify-content:center;font-size:24px;color:var(--on);background:linear-gradient(135deg,#16d9a0,#35c9ff);box-shadow:0 10px 28px rgba(22,217,160,.4);cursor:pointer}
 @media(min-width:900px){.fab{bottom:28px;right:28px}}
-</style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet"></noscript>
+</style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body><script>
 window.__booted=false;
@@ -1036,4 +1036,4 @@ function answer(q){
   }
   if(has(/\br\b|r.multiple|risk.?reward|\brr\b/)){
     const rr=T.filter(t=>t.risk>0);
-    return rr.length?`Average
+    return rr.length?`Average result${tag}: ${(rr.reduce((a,t)=>a+net(t)/t.risk,0)/rr.length).toFixed(2)}R across ${rr.length} trade${rr.length===1?"":"s"} with a risk amount recorded.`:"Add a risk amount to your trades (it fi
