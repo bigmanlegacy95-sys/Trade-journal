@@ -133,6 +133,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   .tiles{grid-template-columns:repeat(6,1fr)}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.ins.warn{border-color:var(--warn)}
+.cal button{position:relative}
+.cal button.today{box-shadow:inset 0 0 0 1px var(--cy)}
+.rv{position:absolute;top:2px;right:3px;font-style:normal;font-size:8px;color:var(--cy)}
+.dayrow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bd);cursor:pointer}
+.dayrow:last-of-type{border-bottom:0}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--bd)}
+.kv:last-child{border:0}
 </style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body><canvas id="bg" aria-hidden="true"></canvas>
@@ -151,7 +159,7 @@ const money=n=>(n<0?"−":"")+"$"+Math.abs(n).toLocaleString(undefined,{minimumF
 const cls=n=>n>0?"g":n<0?"r":"";
 let trades=[],reviews={},cfg={start:0},tab="dash",edit=null,delId=null,shot="",errMsg="";
 let calM=new Date(new Date().getFullYear(),new Date().getMonth(),1),selDay=null;
-let loading=true,eqR="ALL",eqAnim=true,pageAnim=true,eqPts=[],eqXY=[],tf={q:"",res:"all",sym:""},uidG="",dp=null,all=[],accts=[],active="",uname="",sb=null,sync="Connecting…",store=null,assets=null,dl=null,cloud=false,rt=null;
+let dtl="",prevTab="trades",loading=true,eqR="ALL",eqAnim=true,pageAnim=true,eqPts=[],eqXY=[],tf={q:"",res:"all",sym:""},uidG="",dp=null,all=[],accts=[],active="",uname="",sb=null,sync="Connecting…",store=null,assets=null,dl=null,cloud=false,rt=null;
 const net=t=>t.pnl-(t.fees||0);
 
 function ingest(docs){
@@ -233,7 +241,7 @@ function vDash(){
   <div class="chips2"><span>Today <b class="${cls(td)}">${money(td)}</b></span><span>7 days <b class="${cls(wp)}">${money(wp)}</b></span><span>${s.n} trades</span></div></div>`;
   h+=`<div class="tiles">${tile("Win rate",cu(s.wr,"p","wr"))}${tile("Profit factor",s.pf!==null&&isFinite(s.pf)?cu(s.pf,"n","pf"):pf)}${tile("Expectancy",cu(s.ex,"m","ex"),cls(s.ex))}${tile("Avg win",cu(s.aw,"m","aw"),"g")}${tile("Avg loss",cu(s.al,"m","al"),"r")}${tile("Max drawdown",(s.dd?"−":"")+cu(s.dd,"m","dd"),s.dd?"r":"")}</div>`;
   h+=riskCard(s,a,td);
-  h+=`<div class="sec">Recent trades</div><div class="card">${trades.slice(-5).reverse().map(t=>`<div class="rowt"><div><b>${esc(t.symbol)}</b> <span class="badge">${t.side==="buy"?"BUY":"SELL"}</span><div class="sub">${esc(t.date.slice(0,16).replace("T"," "))}</div></div><b class="${cls(net(t))}">${money(net(t))}</b></div>`).join("")}<button class="btn s" onclick="act('tab','trades')">View all trades</button></div>`;
+  h+=`<div class="sec">Recent trades</div><div class="card">${trades.slice(-5).reverse().map(t=>`<div class="rowt" onclick="openTrade('${t.id}')" style="cursor:pointer"><div><b>${esc(t.symbol)}</b> <span class="badge">${t.side==="buy"?"BUY":"SELL"}</span><div class="sub">${esc(t.date.slice(0,16).replace("T"," "))}</div></div><b class="${cls(net(t))}">${money(net(t))}</b></div>`).join("")}<button class="btn s" onclick="act('tab','trades')">View all trades</button></div>`;
   const pr={};for(const t of trades){pr[t.symbol]=pr[t.symbol]||[0,0];pr[t.symbol][0]++;pr[t.symbol][1]+=net(t)}
   const pe=Object.entries(pr).map(([k,v])=>[k,v[0],v[1]]).sort((x,y)=>Math.abs(y[2])-Math.abs(x[2])).slice(0,6);
   h+=`<div class="sec">By pair</div><div class="card">${bars(pe)}</div>`;
@@ -261,12 +269,12 @@ function setStart(v){
 
 function tradeCard(t){
   const p=net(t),conf=delId===t.id;
-  return `<div class="card"><div class="tr"><div><b>${esc(t.symbol)}</b> <span class="badge">${t.side==="buy"?"BUY":"SELL"}</span><div class="sub">${esc(t.date.replace("T"," "))} · ${t.lots} lot${t.lots===1?"":"s"}</div></div><div style="text-align:right"><b class="${cls(p)}" style="font-size:18px">${money(p)}</b>${t.risk>0?`<div class="sub">${(p/t.risk).toFixed(2)}R</div>`:""}</div></div>
+  return `<div class="card"><div class="tr" onclick="openTrade('${t.id}')" style="cursor:pointer"><div><b>${esc(t.symbol)}</b> <span class="badge">${t.side==="buy"?"BUY":"SELL"}</span><div class="sub">${esc(t.date.replace("T"," "))} · ${t.lots} lot${t.lots===1?"":"s"}</div></div><div style="text-align:right"><b class="${cls(p)}" style="font-size:18px">${money(p)}</b>${t.risk>0?`<div class="sub">${(p/t.risk).toFixed(2)}R</div>`:""}</div></div>
   <div class="tags">${t.entry} → ${t.exit}${t.sl?` · SL ${t.sl}`:""}${t.tp?` · TP ${t.tp}`:""}${t.fees?` · fees ${money(t.fees)}`:""}</div>
   ${(t.setup||t.mood)?`<div class="tags">${[t.setup,t.mood].filter(Boolean).map(esc).join(" · ")}</div>`:""}
   ${t.notes?`<div style="margin-top:8px;white-space:pre-wrap">${esc(t.notes)}</div>`:""}
   ${t.shot&&!/^https?:/.test(t.shot)?`<img class="shot" data-p="${esc(t.shot)}" alt="Trade chart" onclick="openShot(this)">`:""}${t.link?`<div><a class="btn s sm" style="display:inline-block;margin-top:8px;text-decoration:none;color:var(--tx)" href="${esc(t.link)}" target="_blank" rel="noopener noreferrer">Open chart ↗</a></div>`:""}
-  <div class="acts"><button class="btn s sm" onclick="act('edit','${t.id}')">Edit</button><button class="btn s sm" style="${conf?"color:var(--r);border-color:var(--r)":""}" onclick="act('del','${t.id}')">${conf?"Tap again to delete":"Delete"}</button></div></div>`;
+  <div class="acts"><button class="btn s sm" onclick="openTrade('${t.id}')">Details</button><button class="btn s sm" onclick="act('edit','${t.id}')">Edit</button><button class="btn s sm" style="${conf?"color:var(--r);border-color:var(--r)":""}" onclick="act('del','${t.id}')">${conf?"Tap again to delete":"Delete"}</button></div></div>`;
 }
 function tlist(){
   const q=tf.q.toLowerCase();
@@ -286,21 +294,26 @@ function vTrades(){
 
 function vCal(){
   const y=calM.getFullYear(),m=calM.getMonth(),first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
-  const day={};for(const t of trades){const k=t.date.slice(0,10);day[k]=(day[k]||0)+net(t)}
-  let mt=0;for(let d=1;d<=days;d++)mt+=day[`${y}-${pad(m+1)}-${pad(d)}`]||0;
+  const day={},cnt={};for(const t of trades){const k=t.date.slice(0,10);day[k]=(day[k]||0)+net(t);cnt[k]=(cnt[k]||0)+1}
+  const tk=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+  const keys=[];for(let d=1;d<=days;d++)keys.push(`${y}-${pad(m+1)}-${pad(d)}`);
+  const ac=keys.filter(k=>day[k]!==undefined),mt=ac.reduce((a,k)=>a+day[k],0),gd=ac.filter(k=>day[k]>0).length,rd=ac.filter(k=>day[k]<0).length;
+  const bk=ac.length?ac.reduce((a,k)=>day[k]>day[a]?k:a,ac[0]):null,wk=ac.length?ac.reduce((a,k)=>day[k]<day[a]?k:a,ac[0]):null;
+  const tile=(k,v,x)=>`<div class="tile"><div class="k">${k}</div><div class="v ${x||""}">${v}</div></div>`;
   let h=`<div class="card"><div class="tr" style="align-items:center;margin-bottom:10px"><button class="btn s sm" onclick="act('mon',-1)" aria-label="Previous month">‹</button><div style="text-align:center"><b>${calM.toLocaleDateString(undefined,{month:"long",year:"numeric"})}</b><div class="sub ${cls(mt)}">${money(mt)}</div></div><button class="btn s sm" onclick="act('mon',1)" aria-label="Next month">›</button></div><div class="cal">`;
   for(const d of ["S","M","T","W","T","F","S"])h+=`<div class="h">${d}</div>`;
   for(let i=0;i<first;i++)h+=`<div></div>`;
-  for(let d=1;d<=days;d++){
-    const k=`${y}-${pad(m+1)}-${pad(d)}`,v=day[k],bg=v==null?"":`background:color-mix(in srgb,var(${v>=0?"--g":"--r"}) 24%,var(--bg))`;
-    h+=`<button class="${k===selDay?"sel":""}" style="${bg}" onclick="act('day','${k}')">${d}${v==null?"":`<small class="${cls(v)}">${Math.abs(v)>=1000?(v/1000).toFixed(1)+"k":Math.round(v)}</small>`}</button>`;
+  for(const k of keys){
+    const v=day[k],bg=v==null?"":`background:color-mix(in srgb,var(${v>=0?"--g":"--r"}) 24%,var(--bg))`,d=+k.slice(8);
+    h+=`<button class="${k===selDay?"sel":""}${k===tk?" today":""}" style="${bg}" aria-label="${k}${v==null?", no trades":`, ${cnt[k]} trade${cnt[k]===1?"":"s"}, ${money(v)}`}" onclick="act('day','${k}')">${reviews[k]?`<i class="rv">✎</i>`:""}${d}${v==null?"":`<small class="${cls(v)}">${Math.abs(v)>=1000?(v/1000).toFixed(1)+"k":Math.round(v)}</small>`}</button>`;
   }
-  h+=`</div></div>`;
+  h+=`</div><div class="tr" style="margin-top:10px;align-items:center"><span class="sub">✎ = daily review written</span><button class="btn s sm" onclick="act('today')">Today</button></div></div>`;
+  h+=`<div class="tiles">${tile("Month P/L",money(mt),cls(mt))}${tile("Trading days",ac.length)}${tile("Green / red",gd+" / "+rd)}${tile("Day win rate",ac.length?(gd/ac.length*100).toFixed(0)+"%":"—")}${tile("Best day",bk?money(day[bk]):"—","g")}${tile("Worst day",wk&&day[wk]<0?money(day[wk]):"—","r")}</div>`;
   if(selDay){
-    const dt=trades.filter(t=>t.date.slice(0,10)===selDay);
-    h+=`<div class="card"><h2>${esc(selDay)} · ${money(day[selDay]||0)}</h2>`+(dt.length?dt.map(t=>`<div class="tr" style="margin-bottom:6px"><span>${esc(t.symbol)} ${t.side==="buy"?"buy":"sell"} · ${t.lots}</span><b class="${cls(net(t))}">${money(net(t))}</b></div>`).join(""):`<div class="sub">No trades this day.</div>`)
+    const dt=trades.filter(t=>t.date.slice(0,10)===selDay),dm=M(dt);
+    h+=`<div class="card" style="margin-top:12px"><h2>${esc(selDay)}${dt.length?` · <span class="${cls(dm.p)}">${money(dm.p)}</span>`:""}</h2>`+(dt.length?`<div class="sub" style="margin-bottom:6px">${dt.length} trade${dt.length===1?"":"s"} · win rate ${dm.wr.toFixed(0)}%. Tap a trade for details.</div>`+dt.map(t=>`<div class="dayrow" onclick="openTrade('${t.id}')"><span>${esc(t.symbol)} ${t.side==="buy"?"buy":"sell"} · ${t.lots}</span><b class="${cls(net(t))}">${money(net(t))}</b></div>`).join(""):`<div class="sub">No trades recorded this day.</div>`)
      +`<label for="f_rev">Daily review</label><textarea id="f_rev" placeholder="What went well? What would you change?" oninput="reviewInput(this.value)">${esc(reviews[selDay]||"")}</textarea></div>`;
-  }else h+=`<div class="sub" style="text-align:center">Tap a day to see its trades and write a review.</div>`;
+  }else h+=`<div class="sub" style="text-align:center;margin-top:10px">Tap a day to see its trades and write a review.</div>`;
   return h;
 }
 function reviewInput(v){
@@ -385,6 +398,8 @@ function act(a,x){
   else if(a==="del"){if(delId===x){delId=null;const tt=trades.find(z=>z.id===x);if(tt&&tt.shot&&sb)sb.storage.from("charts").remove([tt.shot]);remove(x)}else delId=x}
   else if(a==="mon"){calM=new Date(calM.getFullYear(),calM.getMonth()+x,1)}
   else if(a==="day"){selDay=x}
+  else if(a==="back"){tab=prevTab||"trades";pageAnim=true}
+  else if(a==="today"){const n=new Date();calM=new Date(n.getFullYear(),n.getMonth(),1);selDay=new Date(n.getTime()-n.getTimezoneOffset()*6e4).toISOString().slice(0,10)}
   else if(a==="csv"){csv();return}
   render();
 }
@@ -465,6 +480,37 @@ function riskCard(s,a,td){
   if(a.dd){const lim=st*a.dd/100,u=a.ddt==="trail"?s.dd:Math.max(0,st-Math.min(...s.pts));h+=meter(a.ddt==="trail"?"Max drawdown (trailing)":"Max drawdown (static)",u/lim*100,`${money(u)} of ${money(lim)}`)}
   if(a.pt){const tg=st*a.pt/100;h+=meter("Profit target",Math.max(0,s.total)/tg*100,`${money(Math.max(0,s.total))} of ${money(tg)}`,true)}
   return `<div class="sec">Risk center</div><div class="card">${h}<div class="sub" style="margin-top:6px">Calculated from the trades you log. Check your firm’s own rules; this does not guarantee you stay within them.</div></div>`;
+}
+function openTrade(id){dtl=id;if(tab!=="detail")prevTab=tab;tab="detail";pageAnim=true;delId=null;render();window.scrollTo(0,0)}
+function vDetail(){
+  const i=trades.findIndex(x=>x.id===dtl),t=trades[i],back=`<button class="btn s sm" onclick="act('back')">‹ Back</button>`;
+  if(!t)return `<div class="card empty">This trade no longer exists.<div style="margin-top:12px">${back}</div></div>`;
+  const p=net(t),buy=t.side==="buy",mv=Number(((t.exit-t.entry)*(buy?1:-1)).toFixed(5)),r=t.risk>0?p/t.risk:null;
+  const rr=t.sl>0&&t.tp>0&&t.entry!==t.sl?Math.abs(t.tp-t.entry)/Math.abs(t.entry-t.sl):null;
+  const ma=M(trades.filter(x=>x.symbol===t.symbol)),avgL=trades.reduce((a,x)=>a+x.lots,0)/trades.length,prevT=trades[i-1];
+  const rank=trades.map(net).sort((a,b)=>b-a).indexOf(p)+1;
+  const tile=(k,v,x)=>`<div class="tile"><div class="k">${k}</div><div class="v ${x||""}">${v}</div></div>`,dash=v=>v>0?v:"—";
+  const rev=[];
+  if(!(t.sl>0))rev.push(["r","No stop loss was recorded on this trade."]);
+  if(t.risk>0&&p<0&&Math.abs(p)>t.risk*1.1)rev.push(["r",`The loss was ${(Math.abs(p)/t.risk).toFixed(2)}× the planned risk, so the stop may have slipped or been moved.`]);
+  if(trades.length>=5&&t.lots>avgL*1.5)rev.push(["warn",`Position size (${t.lots}) was well above your average (${avgL.toFixed(2)}).`]);
+  if(/^(Revenge|FOMO|Greedy)$/.test(t.mood||""))rev.push(["warn",`You tagged this trade “${esc(t.mood)}”. Check whether it followed your plan.`]);
+  if(prevT&&net(prevT)<0&&prevT.date.slice(0,10)===t.date.slice(0,10))rev.push(["warn","Taken the same day, right after a losing trade."]);
+  if(r!==null&&r>=2)rev.push(["g",`Strong result: ${r.toFixed(2)}R.`]);
+  if(!t.notes)rev.push(["","No notes yet. Write why you took it and what you learned."]);
+  if(!t.shot&&!t.link)rev.push(["","No chart attached. Add a screenshot or link to review it later."]);
+  if(!rev.length)rev.push(["g","Nothing stands out. This trade matches your recorded rules."]);
+  const conf=delId===t.id;
+  let h=`<div class="tr" style="align-items:center;margin-bottom:12px">${back}<span class="sub">Trade ${i+1} of ${trades.length}</span></div>
+  <div class="hero"><div class="k">${esc(t.symbol)} · ${buy?"Buy":"Sell"} · ${esc(t.date.replace("T"," "))}</div><div class="big ${cls(p)}">${money(p)}</div><div class="sub">${r!==null?r.toFixed(2)+"R · ":""}Rank #${rank} of ${trades.length} by result</div></div>`;
+  h+=`<div class="card"><h2>Chart</h2>${t.shot&&!/^https?:/.test(t.shot)?`<img class="shot" style="max-height:340px" data-p="${esc(t.shot)}" alt="Trade chart" onclick="openShot(this)">`:`<div class="sub">No screenshot attached.</div>`}${t.link?`<div><a class="btn s sm" style="display:inline-block;margin-top:10px;text-decoration:none;color:var(--tx)" href="${esc(t.link)}" target="_blank" rel="noopener noreferrer">Open chart ↗</a></div>`:""}</div>`;
+  h+=`<div class="tiles">${tile("Entry",t.entry)}${tile("Exit",t.exit)}${tile("Price move",mv,cls(mv))}${tile("Lots",t.lots)}${tile("Gross P/L",money(t.pnl),cls(t.pnl))}${tile("Fees",money(t.fees||0))}${tile("Stop loss",dash(t.sl))}${tile("Take profit",dash(t.tp))}${tile("Risk",t.risk>0?money(t.risk):"—")}${tile("R multiple",r===null?"—":r.toFixed(2)+"R",r?cls(r):"")}${tile("Planned R:R",rr===null?"—":rr.toFixed(2))}${tile("Duration","Not recorded")}</div>`;
+  h+=`<div class="sec">Review checklist</div>`+rev.map(x=>`<div class="card ins ${x[0]}" style="margin-bottom:8px">${x[1]}</div>`).join("");
+  h+=`<div class="sec">Context</div><div class="card"><div class="kv"><span class="sub">Setup</span><b>${esc(t.setup||"—")}</b></div><div class="kv"><span class="sub">Mindset</span><b>${esc(t.mood||"—")}</b></div><div style="margin-top:10px;white-space:pre-wrap">${t.notes?esc(t.notes):`<span class="sub">No notes yet.</span>`}</div></div>`;
+  if(ma.n>=3)h+=`<div class="card"><h2>Compared with your ${esc(t.symbol)} average</h2><div class="sub">You average ${money(ma.p/ma.n)} per trade on ${esc(t.symbol)} over ${ma.n} trades. This one ${p>=ma.p/ma.n?"beat":"fell short of"} that by ${money(Math.abs(p-ma.p/ma.n))}.</div></div>`;
+  h+=`<div class="acts" style="margin-top:4px"><button class="btn s sm" onclick="act('edit','${t.id}')">Edit</button><button class="btn s sm" style="${conf?"color:var(--r);border-color:var(--r)":""}" onclick="act('del','${t.id}')">${conf?"Tap again to delete":"Delete"}</button></div>`;
+  h+=`<div class="tr" style="margin-top:14px">${i>0?`<button class="btn s sm" onclick="openTrade('${trades[i-1].id}')">‹ Older</button>`:"<span></span>"}${i<trades.length-1?`<button class="btn s sm" onclick="openTrade('${trades[i+1].id}')">Newer ›</button>`:"<span></span>"}</div>`;
+  return h;
 }
 function hi(){const h=new Date().getHours();return h<12?"Good morning":h<17?"Good afternoon":"Good evening"}
 function bindAuto(){
@@ -671,7 +717,7 @@ function render(){
   const names={dash:"Home",trades:"Trades",add:"Add",cal:"Calendar",ins:"AI"};
   const ic={dash:"🏠",trades:"📒",add:"＋",cal:"🗓",ins:"🧠"};
   $("#nav").innerHTML=Object.keys(names).map(k=>`<button class="${tab===k?"on":""}" onclick="act('tab','${k}')"><i>${ic[k]}</i>${names[k]}</button>`).join("");
-  const body={dash:vDash,trades:vTrades,add:vAdd,cal:vCal,ins:vIns}[tab]();
+  const body={dash:vDash,trades:vTrades,add:vAdd,cal:vCal,ins:vIns,detail:vDetail}[tab]();
   $("#app").innerHTML=`<div class="top"><div><h1>Bigman Capital</h1><div class="hello">${uname?`${hi()}, <b>${esc(uname)}</b> 👋`:"Trading Journal"}</div></div><span class="sub">${accts.length>1?`<select class="acs" onchange="switchAcct(this.value)">${accts.map(a=>`<option value="${a.id}" ${a.id===active?"selected":""}>${esc(a.name)}</option>`).join("")}</select>`:""}<span id="sync">${esc(sync)}</span>${sb&&cloud?` · <a href="#" onclick="signOut();return false" style="color:var(--mut)">Sign out</a>`:""}</span></div>`+`<div class="view${pageAnim?" in":""}">${body}</div>`;
   pageAnim=false;if(tab==="add")bindAuto();
   loadShots();animateNums();
