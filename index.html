@@ -151,63 +151,11 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 :root[data-theme="light"] #bg{opacity:.3}
 @media(prefers-color-scheme:light){:root:not([data-theme="dark"]) #bg{opacity:.3}}
 html.rm *,html.rm *::before,html.rm *::after{animation:none!important;transition:none!important}
-nav button{min-width:0}
-@media(max-width:430px){nav{gap:2px;padding:6px}nav button{font-size:10px}nav button i{font-size:20px}}
-.ntitle{font:600 20px "Sora",sans-serif;margin-bottom:8px}
-.tb,.tls{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}
-.tb{flex-wrap:wrap;overflow:visible}
-.tb button,.tls button.tl{flex:none;min-width:38px;height:36px;padding:0 10px;border:1px solid var(--bd);background:none;color:var(--tx);border-radius:10px;font:inherit;font-size:13px}
-.tls button.tl.on{background:linear-gradient(135deg,#16d9a0,#35c9ff);color:#06231b;border-color:transparent;font-weight:600}
-.sw2{flex:none;width:30px;height:30px;border-radius:50%;border:2px solid var(--bd);padding:0}
-.sw2.on{border-color:var(--tx);box-shadow:0 0 0 2px var(--bg)}
-.cpk{flex:none;width:38px!important;height:30px;padding:0;border:0;background:none}
-.nbody{min-height:200px;padding:12px;border:1px solid var(--bd);border-radius:12px;background:var(--bg);outline:none;line-height:1.55;overflow-wrap:anywhere}
-.nbody:empty:before{content:"Start writing…";color:var(--mut)}
-.nbody h2{font:600 18px "Sora",sans-serif;margin:8px 0 4px}.nbody h3{font:600 15px "Sora",sans-serif;margin:8px 0 4px}
-.nbody a{color:var(--cy)}.nbody ul,.nbody ol{margin:4px 0;padding-left:22px}
-.chk{display:flex;gap:8px;align-items:flex-start}
-.nbody input[type=checkbox]{width:18px;height:18px;margin-top:4px;padding:0;flex:none}
-.board{position:relative;width:100%;border:1px solid var(--bd);border-radius:14px;overflow:hidden;margin-top:8px}
-.board canvas{position:absolute;inset:0;width:100%;height:100%;z-index:2;touch-action:none;cursor:crosshair}
-#bimgs{position:absolute;inset:0;z-index:1}
-.bi{position:absolute;touch-action:none}
-.bi img{width:100%;display:block;border-radius:6px;pointer-events:none;user-select:none;-webkit-user-select:none}
-.board.mv canvas{pointer-events:none}.board.mv .bi{outline:1px dashed rgba(150,170,200,.5);cursor:move}
-.board:not(.mv) .bi{pointer-events:none}.board:not(.mv) .rz,.board:not(.mv) .rm{display:none}
-.rz,.rm{position:absolute;width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--bd);font-style:normal;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--tx)}
-.rz{right:-8px;bottom:-8px;cursor:nwse-resize}.rm{top:-8px;right:-8px}
-.pp-dark{background:var(--bg)}.pp-light{background:#fff}
-.pp-grid{background-color:var(--bg);background-image:linear-gradient(rgba(150,170,200,.15) 1px,transparent 1px),linear-gradient(90deg,rgba(150,170,200,.15) 1px,transparent 1px);background-size:28px 28px}
-.pp-lines{background-color:var(--bg);background-image:linear-gradient(rgba(150,170,200,.18) 1px,transparent 1px);background-size:100% 30px}
-.ncard{cursor:pointer}.ncard h3{margin:0 0 4px;font:600 16px "Sora",sans-serif}
-.tag{display:inline-block;border:1px solid var(--bd);border-radius:99px;padding:2px 9px;font-size:11px;color:var(--mut);margin:4px 4px 0 0}
-.fab{display:none;position:fixed;right:16px;bottom:calc(98px + env(safe-area-inset-bottom,0px));width:54px;height:54px;border-radius:50%;border:0;z-index:6;align-items:center;justify-content:center;font-size:24px;color:var(--on);background:linear-gradient(135deg,#16d9a0,#35c9ff);box-shadow:0 10px 28px rgba(22,217,160,.4);cursor:pointer}
-@media(min-width:900px){.fab{bottom:28px;right:28px}}
 </style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
-<body><script>
-window.__booted=false;
-(function(){
-  function show(m){
-    var a=document.getElementById("app");if(!a||window.__booted)return;
-    a.innerHTML='<div class="card" style="text-align:center;margin:18vh auto 0;max-width:420px"><h2>Bigman Capital</h2><div class="sub" style="margin:8px 0 14px">'+m+'</div><button class="btn" onclick="location.reload()">Reload</button><button class="btn s" id="fixc">Clear app cache and reload</button></div>';
-    var f=document.getElementById("fixc");
-    if(f)f.onclick=function(){
-      var p=[];
-      if(navigator.serviceWorker)p.push(navigator.serviceWorker.getRegistrations().then(function(r){return Promise.all(r.map(function(x){return x.unregister()}))}));
-      if(window.caches)p.push(caches.keys().then(function(k){return Promise.all(k.map(function(x){return caches.delete(x)}))}));
-      Promise.all(p).then(function(){location.reload()},function(){location.reload()});
-    };
-  }
-  window.addEventListener("error",function(e){show("Something went wrong while starting: "+String(e.message||"error").slice(0,160))});
-  window.addEventListener("unhandledrejection",function(e){show("Something went wrong while starting: "+String((e.reason&&e.reason.message)||"error").slice(0,160))});
-  setTimeout(function(){show("The app didn’t start. Check your connection and reload. If this keeps happening, the app files may not have uploaded completely.")},8000);
-})();
-</script>
-<canvas id="bg" aria-hidden="true"></canvas>
+<body><canvas id="bg" aria-hidden="true"></canvas>
 <div id="toasts" aria-live="polite"></div>
-<button id="fab" class="fab" onclick="quickNote()" aria-label="Quick private note" title="Quick private note">✎</button>
-<div id="app"><div class="card" style="text-align:center;margin:22vh auto 0;max-width:420px"><h1 style="display:inline-block">Bigman Capital</h1><div class="sub" style="margin-top:8px">Loading…</div></div></div>
+<div id="app"></div>
 <nav id="nav"></nav>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
@@ -235,19 +183,18 @@ function applySettings(){
 }
 function setS(k,v){S[k]=v;saveS();applySettings();render()}
 function toggleHide(){setS("hide",!S.hide)}
-function resetS(){const pn=S.pin;S=Object.assign({},DEF);if(pn)S.pin=pn;saveS();applySettings();render();toast("Settings reset")}
+function resetS(){S=Object.assign({},DEF);saveS();applySettings();render();toast("Settings reset")}
 const cls=n=>n>0?"g":n<0?"r":"";
 let trades=[],reviews={},cfg={start:0},tab="dash",edit=null,delId=null,shot="",errMsg="";
 let calM=new Date(new Date().getFullYear(),new Date().getMonth(),1),selDay=null;
-let nbLocked=true,pinTries=0,pinLock=0,notes=[],NT=null,cx=null,tool="move",pcol="#16d9a0",psz=4,snap=false,undo=[],redo=[],nsave=null,nstat="",erPushed=false,nQ="",nTag="",dtl="",prevTab="trades",loading=true,eqR="ALL",eqAnim=true,pageAnim=true,eqPts=[],eqXY=[],tf={q:"",res:"all",sym:""},uidG="",dp=null,all=[],accts=[],active="",uname="",sb=null,sync="Connecting…",store=null,assets=null,dl=null,cloud=false,rt=null;
+let dtl="",prevTab="trades",loading=true,eqR="ALL",eqAnim=true,pageAnim=true,eqPts=[],eqXY=[],tf={q:"",res:"all",sym:""},uidG="",dp=null,all=[],accts=[],active="",uname="",sb=null,sync="Connecting…",store=null,assets=null,dl=null,cloud=false,rt=null;
 const net=t=>t.pnl-(t.fees||0);
 
 function ingest(docs){
-  loading=false;notes=[];trades=[];reviews={};cfg={start:0};
+  loading=false;trades=[];reviews={};cfg={start:0};
   for(const d of docs){
     if(d.id.startsWith("t_"))trades.push(d);
     else if(d.id.startsWith("d_"))reviews[d.date]=d.text||"";
-    else if(d.id.startsWith("n_"))notes.push(d);
     else if(d.id==="cfg")cfg=Object.assign({start:0},d);
   }
   trades.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
@@ -264,7 +211,7 @@ function addAcct(){const v=document.getElementById("f_new").value.trim();if(!v)r
 function renameAcct(v){v=v.trim();if(!v)return;const a=accts.find(x=>x.id===active);if(a){a.name=v;commitCfg(active)}}
 function refresh(){
   const a=document.activeElement;
-  if(tab==="add"||tab==="note"||(a&&/^(TEXTAREA|INPUT|SELECT)$/.test(a.tagName)))badge();else render();
+  if(tab==="add"||(a&&/^(TEXTAREA|INPUT|SELECT)$/.test(a.tagName)))badge();else render();
 }
 function badge(){const b=$("#sync");if(b)b.textContent=sync}
 async function save(k,o){
@@ -443,9 +390,9 @@ const shotCache={};
 async function loadShots(){
   if(!sb)return;
   for(const im of document.querySelectorAll("img[data-p]")){
-    const p=im.dataset.p,b=im.dataset.b||"charts",k=b+"/"+p;
-    if(!shotCache[k]){const {data}=await sb.storage.from(b).createSignedUrl(p,3600);shotCache[k]=(data&&data.signedUrl)||""}
-    if(shotCache[k])im.src=shotCache[k];
+    const p=im.dataset.p;
+    if(!shotCache[p]){const {data}=await sb.storage.from("charts").createSignedUrl(p,3600);shotCache[p]=(data&&data.signedUrl)||""}
+    if(shotCache[p])im.src=shotCache[p];
   }
 }
 function openShot(im){if(im.src)window.open(im.src,"_blank","noopener")}
@@ -474,7 +421,7 @@ function csv(){
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:"text/csv"}));a.download="trades.csv";document.body.appendChild(a);a.click();a.remove();
 }
 function act(a,x){
-  if(a==="tab"){if(tab==="note")flushNote();tab=x;pageAnim=true;eqAnim=true;edit=null;delId=null;shot="";errMsg=""}
+  if(a==="tab"){tab=x;pageAnim=true;eqAnim=true;edit=null;delId=null;shot="";errMsg=""}
   else if(a==="edit"){edit=trades.find(t=>t.id===x)||null;shot=edit&&edit.shot||"";tab="add"}
   else if(a==="del"){if(delId===x){delId=null;const tt=trades.find(z=>z.id===x);if(tt&&tt.shot&&sb)sb.storage.from("charts").remove([tt.shot]);remove(x)}else delId=x}
   else if(a==="mon"){calM=new Date(calM.getFullYear(),calM.getMonth()+x,1)}
@@ -601,288 +548,8 @@ function vSettings(){
   <div class="card"><h2>Appearance</h2><label>Theme</label>${seg("theme",[["system","System"],["dark","Dark"],["light","Light"]])}${swt("bg","Animated chart background","Moving candlesticks behind the app")}${swt("rm","Reduce motion","Turns off animations and the moving background")}</div>
   <div class="card"><h2>Privacy</h2>${swt("hide","Hide balances","Replaces money amounts with dots. Also on the eye button at the top.")}</div>
   <div class="card"><h2>Trading defaults</h2><label>Currency symbol</label>${sel("cur",[["$","$ Dollar"],["€","€ Euro"],["£","£ Pound"],["¥","¥ Yen"],["","None"]])}<label>Default pair for new trades</label>${sel("pair",ALLP.map(p=>[p,p]))}<label for="s_lot">Default lot size</label><input id="s_lot" type="number" step="any" min="0" inputmode="decimal" value="${esc(S.lot)}" onchange="setS('lot',this.value===''?'':Math.max(0,Number(this.value)||0))"><label>Open the app on</label>${sel("start",[["dash","Home"],["trades","Trades"],["cal","Calendar"],["ins","AI"]])}</div>
-  ${pinCard()}<div class="card"><h2>Data &amp; account</h2>${trades.length?`<button class="btn s" onclick="act('csv')">Export trades (CSV)</button>`:""}${instBlock()}${sb?`<button class="btn s" onclick="signOut()">Sign out</button>`:""}<button class="btn s" onclick="resetS()">Reset settings</button><div class="sub" style="margin-top:10px">Appearance, privacy and default settings are saved on this device. Your trades and accounts sync with your login.</div></div>`;
+  <div class="card"><h2>Data &amp; account</h2>${trades.length?`<button class="btn s" onclick="act('csv')">Export trades (CSV)</button>`:""}${instBlock()}${sb?`<button class="btn s" onclick="signOut()">Sign out</button>`:""}<button class="btn s" onclick="resetS()">Reset settings</button><div class="sub" style="margin-top:10px">Appearance, privacy and default settings are saved on this device. Your trades and accounts sync with your login.</div></div>`;
 }
-
-const BW=1000,NCOL=["#16d9a0","#35c9ff","#9270ff","#ffbe62","#ff647c","#f3f7ff","#0c1424"],QMAX=50*1048576;
-const TOOLS=[["move","Move"],["pen","Pen"],["brush","Brush"],["hl","Marker"],["line","Line"],["arrow","Arrow"],["rect","Box"],["ell","Circle"],["zone","Zone"],["fib","Fib"],["text","Text"],["eraser","Eraser"]];
-const TPL={
-  lesson:'<h2>What I’m learning</h2><div><br></div><h3>Key points</h3><ul><li><br></li></ul><h3>Questions</h3><ul><li><br></li></ul><h3>How I’ll apply it</h3><div><br></div>',
-  idea:'<h2>Trade idea</h2><h3>Setup</h3><div><br></div><h3>Why this trade</h3><div><br></div><h3>Entry, stop and target</h3><div><br></div><h3>Risk</h3><div><br></div>',
-  strategy:'<h2>Strategy checklist</h2><div class="chk"><input type="checkbox"> Higher-timeframe trend confirms direction</div><div class="chk"><input type="checkbox"> Key level identified</div><div class="chk"><input type="checkbox"> Entry trigger present</div><div class="chk"><input type="checkbox"> Stop loss and target set</div><div class="chk"><input type="checkbox"> Risk within my limit</div>',
-  book:'<h2>Book or course</h2><div><br></div><h3>Main ideas</h3><ul><li><br></li></ul><h3>Quotes</h3><ul><li><br></li></ul><h3>Actions</h3><ul><li><br></li></ul>'
-};
-const ldk=d=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
-const plain=h=>String(h||"").replace(/<[^>]*>/g," ").replace(/&nbsp;/g," ").replace(/\s+/g," ").trim();
-function clean(h){
-  const src=new DOMParser().parseFromString("<body>"+h,"text/html").body,out=document.createElement("div");
-  const ok=/^(B|I|U|S|STRONG|EM|H1|H2|H3|UL|OL|LI|DIV|P|BR|SPAN|A|BLOCKQUOTE|CODE|INPUT)$/,col="(#[0-9a-f]{3,8}|rgb\\([\\d\\s,.]+\\))";
-  (function cp(from,to){
-    for(const n of from.childNodes){
-      if(n.nodeType===3){to.appendChild(document.createTextNode(n.textContent));continue}
-      if(n.nodeType!==1)continue;
-      if(!ok.test(n.tagName)){if(!/^(SCRIPT|STYLE)$/.test(n.tagName))cp(n,to);continue}
-      const e=document.createElement(n.tagName.toLowerCase());
-      if(n.tagName==="A"){const u=n.getAttribute("href")||"";if(/^https?:\/\//i.test(u)){e.setAttribute("href",u);e.setAttribute("target","_blank");e.setAttribute("rel","noopener noreferrer")}}
-      else if(n.tagName==="INPUT"){if(n.type!=="checkbox")continue;e.type="checkbox";if(n.hasAttribute("checked"))e.setAttribute("checked","")}
-      else{
-        const st=n.getAttribute("style")||"",c=st.match(new RegExp("(?:^|;)\\s*color:\\s*"+col,"i")),b=st.match(new RegExp("background-color:\\s*"+col,"i"));
-        let ns="";if(c)ns+="color:"+c[1]+";";if(b)ns+="background-color:"+b[1]+";";if(ns)e.setAttribute("style",ns);
-        if(n.className==="chk")e.className="chk";
-      }
-      cp(n,e);to.appendChild(e);
-    }
-  })(src,out);
-  return out.innerHTML;
-}
-function streak(){const ds=new Set(notes.map(n=>ldk(new Date(n.updated||0))));let c=0,d=new Date();if(!ds.has(ldk(d)))d.setDate(d.getDate()-1);while(ds.has(ldk(d))){c++;d.setDate(d.getDate()-1)}return c}
-function quota(){return notes.reduce((a,n)=>a+(n.imgs||[]).reduce((b,i)=>b+(i.s||0),0)+(n.files||[]).reduce((b,i)=>b+(i.s||0),0),0)}
-function nlist(){
-  const q=nQ.toLowerCase();
-  const L=notes.filter(n=>(!nTag||(n.tags||[]).includes(nTag))&&(!q||((n.title||"")+" "+plain(n.body)+" "+(n.tags||[]).join(" ")).toLowerCase().includes(q))).sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||(b.updated||0)-(a.updated||0));
-  const html=L.length?L.map(n=>`<div class="card ncard" onclick="openNote('${n.id}')"><h3>${n.pin?"📌 ":""}${esc(n.title||"Untitled")}</h3><div class="sub">${esc(plain(n.body).slice(0,110)||"No text yet")}</div>${(n.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}<div class="sub" style="margin-top:6px">${new Date(n.updated||0).toLocaleDateString()}${(n.imgs||[]).length?` · 🖼 ${n.imgs.length}`:""}${(n.files||[]).length?` · 📎 ${n.files.length}`:""}${(n.strokes||[]).length?" · ✏️ drawing":""}</div></div>`).join(""):`<div class="card empty">${notes.length?"No notes match your search.":"No notes yet. Start one from a template above."}</div>`;
-  const el=document.getElementById("nl");if(el)el.innerHTML=html;return html;
-}
-function setNq(v){nQ=v;nlist()}
-function setNtag(t){nTag=nTag===t?"":t;render()}
-async function pinHash(p){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("bm-notebook:"+p));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("")}
-function lockView(){return `<div class="card" style="text-align:center"><div style="font-size:34px">🔒</div><h2>Private notebook</h2><div class="sub">Enter your PIN to open your notes.</div><input id="nb_pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="PIN" style="text-align:center;margin-top:12px" onkeydown="if(event.key==='Enter')unlockNb()"><div class="err" id="nb_err"></div><button class="btn" onclick="unlockNb()">Unlock</button></div>`}
-function pinMsg(t,ok){const e=document.getElementById("nb_err")||document.getElementById("pin_msg");if(e){e.textContent=t;e.style.color=ok?"var(--g)":"var(--r)"}}
-async function unlockNb(){
-  if(Date.now()<pinLock)return pinMsg("Too many attempts. Wait a few seconds.");
-  const v=document.getElementById("nb_pin").value;
-  try{
-    if(await pinHash(v)===S.pin){nbLocked=false;pinTries=0;render()}
-    else{if(++pinTries>=5){pinLock=Date.now()+30000;pinTries=0}pinMsg("Wrong PIN.")}
-  }catch(e){pinMsg("PIN lock needs a secure (https) connection.")}
-}
-async function setPin(){
-  const a=document.getElementById("s_pin1").value,b=document.getElementById("s_pin2").value;
-  if(!/^\d{4,8}$/.test(a))return pinMsg("Use 4 to 8 digits.");
-  if(a!==b)return pinMsg("The PINs don’t match.");
-  try{S.pin=await pinHash(a);saveS();nbLocked=false;toast("Notebook PIN set");render()}catch(e){pinMsg("PIN lock needs a secure (https) connection.")}
-}
-async function removePin(){
-  const c=document.getElementById("s_pinc").value;
-  try{if(await pinHash(c)!==S.pin)return pinMsg("Wrong PIN.");delete S.pin;saveS();toast("Notebook PIN removed");render()}catch(e){pinMsg("Could not check the PIN.")}
-}
-function lockNow(){flushNote();nbLocked=true;if(tab==="note")tab="notes";render()}
-function quickNote(){if(S.pin&&nbLocked){tab="notes";pageAnim=true;render();return}newNote("")}
-function pinCard(){
-  return S.pin?`<div class="card"><h2>Private notebook</h2><div class="sub">Your notebook is locked with a PIN on this device. It locks when you leave it or close the app.</div><button class="btn s" onclick="lockNow()">Lock now</button><label for="s_pinc">Enter your PIN to remove the lock</label><input id="s_pinc" type="password" inputmode="numeric" autocomplete="off" maxlength="8"><button class="btn s" onclick="removePin()">Remove PIN</button><div class="err" id="pin_msg"></div></div>`
-  :`<div class="card"><h2>Private notebook</h2><div class="sub">Add a PIN so nobody who picks up your phone can open your notes. This protects this device only; notes still sync to your account.</div><label for="s_pin1">New PIN (4 to 8 digits)</label><input id="s_pin1" type="password" inputmode="numeric" autocomplete="off" maxlength="8"><label for="s_pin2">Repeat PIN</label><input id="s_pin2" type="password" inputmode="numeric" autocomplete="off" maxlength="8"><button class="btn" onclick="setPin()">Set PIN</button><div class="err" id="pin_msg"></div></div>`;
-}
-function vNotes(){
-  if(S.pin&&nbLocked)return lockView();
-  const tags=[...new Set(notes.flatMap(n=>n.tags||[]))].sort(),sk=streak();
-  return `<div class="tr" style="align-items:center;margin-bottom:10px"><h2 style="margin:0">Notebook</h2><span class="sub">${notes.length} note${notes.length===1?"":"s"} · 🔥 ${sk}-day study streak</span></div>
-  <div class="card"><div class="k">New note</div><div class="chips" style="margin-bottom:0">${[["","Blank"],["lesson","Lesson"],["idea","Trade idea"],["strategy","Strategy checklist"],["book","Book summary"]].map(([k,l])=>`<button onclick="newNote('${k}')">${l}</button>`).join("")}</div></div>
-  <input id="nq" type="search" placeholder="Search notes…" value="${esc(nQ)}" oninput="setNq(this.value)" style="margin-bottom:8px" aria-label="Search notes">
-  ${tags.length?`<div class="chips">${tags.map(t=>`<button style="${nTag===t?"background:var(--ac);color:var(--on);border-color:var(--ac)":""}" onclick="setNtag('${esc(t).replace(/'/g,"")}')">${esc(t)}</button>`).join("")}</div>`:""}
-  <div id="nl">${nlist()}</div>`;
-}
-function newNote(k){
-  const id="n_"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-  const o={title:"",body:TPL[k]||"",tags:[],pin:false,paper:"grid",bh:600,strokes:[],imgs:[],files:[],created:Date.now(),updated:Date.now()};
-  if(store)store.put(id,o).catch(()=>toast("Could not create the note.","err"));
-  openNote(id,Object.assign({id},o));
-}
-function openNote(id,obj){
-  const n=obj||notes.find(x=>x.id===id);if(!n)return;
-  NT=JSON.parse(JSON.stringify(n));NT.strokes=NT.strokes||[];NT.imgs=NT.imgs||[];NT.files=NT.files||[];NT.tags=NT.tags||[];NT.bh=NT.bh||600;NT.paper=NT.paper||"grid";
-  undo=[];redo=[];nstat="";tool="move";delId=null;tab="note";pageAnim=true;render();window.scrollTo(0,0);
-}
-function nsb(){const e=document.getElementById("nst");if(e)e.textContent=nstat}
-function touch(){if(!NT)return;NT.updated=Date.now();nstat="Saving…";nsb();clearTimeout(nsave);nsave=setTimeout(flushNote,800)}
-async function flushNote(){
-  clearTimeout(nsave);nsave=null;if(!NT||!store)return;
-  const b=document.getElementById("nbody");if(b)NT.body=clean(b.innerHTML);
-  const o=Object.assign({},NT);delete o.id;
-  if(JSON.stringify(o).length>900000){nstat="Page too large: remove some drawings";nsb();return}
-  try{await store.put(NT.id,o);nstat="Saved"}catch(e){nstat="Save failed"}
-  nsb();
-}
-function backNote(){flushNote();tab="notes";pageAnim=true;render()}
-function delNote(){
-  if(delId!==NT.id){delId=NT.id;const b=document.getElementById("ndel");if(b){b.textContent="Tap again";b.style.color="var(--r)"}return}
-  const id=NT.id,fs=NT.imgs.map(i=>i.p).concat(NT.files.map(f=>f.p));
-  clearTimeout(nsave);NT=null;delId=null;
-  if(sb&&fs.length)sb.storage.from("notes").remove(fs);
-  store.del(id).then(()=>toast("Note deleted")).catch(()=>toast("Could not delete the note.","err"));
-  tab="notes";render();
-}
-function fmt(c,v){document.getElementById("nbody").focus();document.execCommand(c,false,v||null);touch()}
-function fmtHi(c){document.getElementById("nbody").focus();if(!document.execCommand("hiliteColor",false,c))document.execCommand("backColor",false,c);touch()}
-function fmtLink(){const u=prompt("Paste a link (https://…)");if(u&&/^https?:\/\/\S+$/i.test(u.trim()))fmt("createLink",u.trim());else if(u)toast("Links must start with http:// or https://","err")}
-function fmtChk(){document.getElementById("nbody").focus();document.execCommand("insertHTML",false,'<div class="chk"><input type="checkbox"> </div>');touch()}
-function vNote(){
-  if(!NT)return `<div class="card empty">This note no longer exists.<div style="margin-top:12px"><button class="btn s sm" onclick="backNote()">‹ Back</button></div></div>`;
-  const b=(l,a,t)=>`<button onpointerdown="event.preventDefault()" onclick="${a}" title="${t}" aria-label="${t}">${l}</button>`;
-  return `<div class="tr" style="align-items:center;margin-bottom:10px"><button class="btn s sm" onclick="backNote()">‹ Notes</button><span class="sub" id="nst">${esc(nstat)}</span><span><button class="ib" onclick="NT.pin=!NT.pin;this.style.opacity=NT.pin?1:.5;touch()" style="opacity:${NT.pin?1:.5}" aria-label="Pin note">📌</button><button class="btn s sm" id="ndel" onclick="delNote()" style="margin-left:6px">Delete</button></span></div>
-  <div class="card"><input id="nt" class="ntitle" placeholder="Title" value="${esc(NT.title)}" oninput="NT.title=this.value;touch()" aria-label="Note title">
-  <input placeholder="Tags, separated by commas" value="${esc(NT.tags.join(", "))}" oninput="NT.tags=this.value.split(',').map(x=>x.trim()).filter(Boolean).slice(0,8);touch()" aria-label="Tags">
-  <div class="tb">${b("<b>B</b>","fmt('bold')","Bold")}${b("<i>I</i>","fmt('italic')","Italic")}${b("<u>U</u>","fmt('underline')","Underline")}${b("H1","fmt('formatBlock','h2')","Heading")}${b("H2","fmt('formatBlock','h3')","Subheading")}${b("¶","fmt('formatBlock','div')","Normal text")}${b("• List","fmt('insertUnorderedList')","Bulleted list")}${b("1. List","fmt('insertOrderedList')","Numbered list")}${b("☑ Task","fmtChk()","Checklist item")}${b("🔗","fmtLink()","Add link")}${b("✕ fmt","fmt('removeFormat')","Clear formatting")}
-  <label class="cpl" style="margin:0;display:flex;align-items:center;gap:4px;font-size:12px">Text<input type="color" value="#16d9a0" onchange="fmt('foreColor',this.value)" class="cpk"></label><label style="margin:0;display:flex;align-items:center;gap:4px;font-size:12px">Highlight<input type="color" value="#ffbe62" onchange="fmtHi(this.value)" class="cpk"></label></div>
-  <div id="nbody" class="nbody" contenteditable="true" oninput="touch()" aria-label="Note text"></div></div>
-  <div class="card"><h2>Drawing board</h2><div class="sub">Pick a tool and draw. Use Move to drag and resize images, which you can draw over.</div>
-  <div class="tls" style="margin-top:8px">${TOOLS.map(([t,l])=>`<button class="tl" data-t="${t}" onclick="setTool('${t}')">${l}</button>`).join("")}</div>
-  <div class="tls">${NCOL.map(c=>`<button class="sw2${c===pcol?" on":""}" data-c="${c}" style="background:${c}" onclick="setCol('${c}')" aria-label="Colour ${c}"></button>`).join("")}<input type="color" class="cpk" value="${pcol}" oninput="setCol(this.value)" aria-label="Custom colour"></div>
-  <div class="row2" style="align-items:center"><div><label for="psz">Size</label><input id="psz" type="range" min="1" max="20" value="${psz}" oninput="psz=+this.value"></div><label style="display:flex;gap:8px;align-items:center;margin:18px 0 0"><input type="checkbox" style="width:auto" ${snap?"checked":""} onchange="snap=this.checked"> Snap lines to 45°</label></div>
-  <div class="tls" style="margin-top:8px"><button class="tl" onclick="doUndo()">↶ Undo</button><button class="tl" onclick="doRedo()">↷ Redo</button><button class="tl" onclick="clearInk()">Clear ink</button><button class="tl" onclick="growBoard(200)">Taller</button><button class="tl" onclick="growBoard(-200)">Shorter</button><button class="tl" onclick="document.getElementById('fimg').click()">＋ Image</button><button class="tl" onclick="exportBoard()">Export PNG</button></div>
-  <label for="npp">Paper</label><select id="npp" onchange="NT.paper=this.value;document.getElementById('board').className='board pp-'+NT.paper+(tool==='move'?' mv':'');touch()">${[["grid","Grid"],["lines","Lined"],["dark","Plain dark"],["light","Plain white"]].map(([v,l])=>`<option value="${v}" ${NT.paper===v?"selected":""}>${l}</option>`).join("")}</select>
-  <div id="board" class="board pp-${NT.paper} mv"><div id="bimgs"></div><canvas id="bc"></canvas></div>
-  <input id="fimg" type="file" accept="image/*" hidden onchange="addImg(this)"></div>
-  <div class="card"><h2>Files</h2><div id="nfiles"></div><button class="btn s" onclick="document.getElementById('ffile').click()">Attach a file (PDF, text, Word, Excel)</button><input id="ffile" type="file" accept=".pdf,.txt,.csv,.docx,.xlsx,image/*" hidden onchange="addFile(this)"><div class="sub" style="margin-top:8px">Up to 10 MB per file, 50 MB in total. Files and images are saved to your account.</div></div>`;
-}
-function drawFiles(){
-  const e=document.getElementById("nfiles");if(!e||!NT)return;
-  e.innerHTML=NT.files.length?NT.files.map((f,i)=>`<div class="kv" style="align-items:center"><span>📎 ${esc(f.name)} <span class="sub">${(f.s/1048576).toFixed(1)} MB</span></span><span><button class="btn s sm" onclick="openFile(${i})">Open</button> <button class="btn s sm" onclick="rmFile(${i})">Remove</button></span></div>`).join(""):`<div class="sub" style="margin-bottom:8px">No files attached.</div>`;
-}
-async function addFile(inp){
-  const f=inp.files&&inp.files[0];inp.value="";if(!f)return;
-  if(!sb||!cloud)return toast("Uploads need a signed-in account and an internet connection.","err");
-  if(f.size>10485760)return toast("That file is over 10 MB.","err");
-  if(quota()+f.size>QMAX)return toast("Storage limit reached (50 MB). Remove some files first.","err");
-  toast("Uploading file…");
-  try{
-    const p=`${uidG}/f/${Date.now().toString(36)}_${f.name.replace(/[^\w.-]/g,"_").slice(-60)}`;
-    const {error}=await sb.storage.from("notes").upload(p,f,{contentType:f.type||"application/octet-stream"});if(error)throw error;
-    NT.files.push({p,name:f.name.slice(0,80),s:f.size});touch();drawFiles();
-  }catch(e){toast("Upload failed: "+((e&&e.message)||"error"),"err")}
-}
-async function openFile(i){const f=NT.files[i];if(!f||!sb)return;const {data}=await sb.storage.from("notes").createSignedUrl(f.p,300);if(data&&data.signedUrl)window.open(data.signedUrl,"_blank","noopener")}
-function rmFile(i){const f=NT.files[i];if(!f)return;NT.files.splice(i,1);if(sb)sb.storage.from("notes").remove([f.p]);touch();drawFiles()}
-async function addImg(inp){
-  const f=inp.files&&inp.files[0];inp.value="";if(!f)return;
-  if(!sb||!cloud)return toast("Uploads need a signed-in account and an internet connection.","err");
-  if(!/^image\//.test(f.type))return toast("Please choose an image.","err");
-  if(quota()+400000>QMAX)return toast("Storage limit reached (50 MB). Remove some files first.","err");
-  toast("Uploading image…");
-  try{
-    const blob=await shrink(f),p=`${uidG}/n/${Date.now().toString(36)}.jpg`;
-    const {error}=await sb.storage.from("notes").upload(p,blob,{contentType:"image/jpeg"});if(error)throw error;
-    pushU();const k=NT.imgs.length%5;NT.imgs.push({p,s:blob.size,x:40+k*30,y:40+k*30,w:360});touch();drawImgs();
-  }catch(e){toast("Upload failed: "+((e&&e.message)||"error"),"err")}
-}
-function pushU(){undo.push(JSON.stringify({s:NT.strokes,i:NT.imgs}));if(undo.length>60)undo.shift();redo=[]}
-function applyU(o){NT.strokes=o.s;NT.imgs=o.i;touch();redraw();drawImgs()}
-function doUndo(){if(!undo.length)return;redo.push(JSON.stringify({s:NT.strokes,i:NT.imgs}));applyU(JSON.parse(undo.pop()))}
-function doRedo(){if(!redo.length)return;undo.push(JSON.stringify({s:NT.strokes,i:NT.imgs}));applyU(JSON.parse(redo.pop()))}
-function clearInk(){if(!NT.strokes.length)return;pushU();NT.strokes=[];touch();redraw()}
-function growBoard(d){NT.bh=Math.max(300,Math.min(2400,NT.bh+d));touch();fitBoard()}
-function setTool(t){tool=t;document.querySelectorAll(".tl[data-t]").forEach(b=>b.classList.toggle("on",b.dataset.t===t));const b=document.getElementById("board");if(b)b.classList.toggle("mv",t==="move")}
-function setCol(c){pcol=c;document.querySelectorAll(".sw2").forEach(b=>b.classList.toggle("on",b.dataset.c===c))}
-function dseg(x,y,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],l=dx*dx+dy*dy;let t=l?((x-a[0])*dx+(y-a[1])*dy)/l:0;t=Math.max(0,Math.min(1,t));return Math.hypot(x-(a[0]+t*dx),y-(a[1]+t*dy))}
-function hit(s,x,y,r){
-  const p=s.pts,a=p[0],b=p[1]||p[0];
-  if(s.t==="text"){const fs=s.w*5+10;return x>=a[0]-r&&x<=a[0]+(s.txt||"").length*fs*.6+r&&y>=a[1]-fs-r&&y<=a[1]+r}
-  if(s.t==="rect"||s.t==="zone"||s.t==="ell"||s.t==="fib")return x>=Math.min(a[0],b[0])-r&&x<=Math.max(a[0],b[0],a[0]+160)+r&&y>=Math.min(a[1],b[1])-r&&y<=Math.max(a[1],b[1])+r;
-  for(let i=0;i<p.length;i++)if(dseg(x,y,p[i],p[i+1]||p[i])<=r+s.w)return true;
-  return false;
-}
-function snapPt(a,p){const d=Math.hypot(p[0]-a[0],p[1]-a[1]),g=Math.round(Math.atan2(p[1]-a[1],p[0]-a[0])/(Math.PI/4))*(Math.PI/4);return[a[0]+d*Math.cos(g),a[1]+d*Math.sin(g)]}
-function drawS(x,s){
-  const p=s.pts,a=p[0],b=p[1]||p[0];
-  x.save();x.strokeStyle=s.c;x.fillStyle=s.c;x.lineCap="round";x.lineJoin="round";x.lineWidth=s.w;
-  if(s.t==="pen"||s.t==="brush"||s.t==="hl"){
-    x.globalAlpha=s.t==="hl"?.35:s.t==="brush"?.8:1;x.lineWidth=s.t==="hl"?s.w*4:s.t==="brush"?s.w*2:s.w;
-    x.beginPath();x.moveTo(a[0],a[1]);
-    if(p.length<3)p.forEach(q=>x.lineTo(q[0]+.01,q[1]));
-    else{for(let i=1;i<p.length-1;i++)x.quadraticCurveTo(p[i][0],p[i][1],(p[i][0]+p[i+1][0])/2,(p[i][1]+p[i+1][1])/2);x.lineTo(p[p.length-1][0],p[p.length-1][1])}
-    x.stroke();
-  }else if(s.t==="line"||s.t==="arrow"){
-    x.beginPath();x.moveTo(a[0],a[1]);x.lineTo(b[0],b[1]);x.stroke();
-    if(s.t==="arrow"){const g=Math.atan2(b[1]-a[1],b[0]-a[0]),L=Math.max(16,s.w*4);x.beginPath();x.moveTo(b[0],b[1]);x.lineTo(b[0]-L*Math.cos(g-.45),b[1]-L*Math.sin(g-.45));x.moveTo(b[0],b[1]);x.lineTo(b[0]-L*Math.cos(g+.45),b[1]-L*Math.sin(g+.45));x.stroke()}
-  }else if(s.t==="rect"||s.t==="zone"){
-    const X=Math.min(a[0],b[0]),Y=Math.min(a[1],b[1]),w=Math.abs(b[0]-a[0]),h=Math.abs(b[1]-a[1]);
-    if(s.t==="zone"){x.globalAlpha=.2;x.fillRect(X,Y,w,h);x.globalAlpha=1}
-    x.strokeRect(X,Y,w,h);
-  }else if(s.t==="ell"){x.beginPath();x.ellipse((a[0]+b[0])/2,(a[1]+b[1])/2,Math.abs(b[0]-a[0])/2||1,Math.abs(b[1]-a[1])/2||1,0,0,Math.PI*2);x.stroke()}
-  else if(s.t==="fib"){
-    const x1=Math.min(a[0],b[0]),x2=Math.max(a[0],b[0],x1+160);x.font="16px Inter,sans-serif";
-    [0,.236,.382,.5,.618,.786,1].forEach(l=>{const y=a[1]+(b[1]-a[1])*l;x.globalAlpha=.8;x.lineWidth=Math.max(1,s.w/2);x.beginPath();x.moveTo(x1,y);x.lineTo(x2,y);x.stroke();x.globalAlpha=1;x.fillText((l*100).toFixed(1)+"%",x1+4,y-4)});
-  }else if(s.t==="text"){x.font=`600 ${s.w*5+10}px Inter,sans-serif`;x.fillText(s.txt||"",a[0],a[1])}
-  x.restore();
-}
-function redraw(extra){if(!cx||!NT)return;cx.clearRect(0,0,BW,NT.bh);NT.strokes.forEach(s=>drawS(cx,s));if(extra)drawS(cx,extra)}
-function sc(){const b=document.getElementById("board");return b?b.clientWidth/BW:1}
-function fitBoard(){
-  const b=document.getElementById("board"),c=document.getElementById("bc");if(!b||!c||!NT)return;
-  const w=b.clientWidth,s=w/BW,h=Math.round(NT.bh*s),d=Math.min(devicePixelRatio||1,2);
-  b.style.height=h+"px";c.width=Math.round(w*d);c.height=Math.round(h*d);cx=c.getContext("2d");cx.setTransform(d*s,0,0,d*s,0,0);
-  redraw();drawImgs();
-}
-function drawImgs(){
-  const box=document.getElementById("bimgs");if(!box||!NT)return;const s=sc();box.innerHTML="";
-  NT.imgs.forEach((im,i)=>{
-    const d=document.createElement("div");d.className="bi";d.style.cssText=`left:${im.x*s}px;top:${im.y*s}px;width:${im.w*s}px`;
-    const g=document.createElement("img"),h=document.createElement("i"),x=document.createElement("i");
-    g.dataset.p=im.p;g.dataset.b="notes";g.alt="Note image";g.draggable=false;h.className="rz";h.textContent="◢";x.className="rm";x.textContent="×";
-    d.append(g,h,x);box.appendChild(d);
-    d.onpointerdown=e=>{
-      if(tool!=="move")return;e.preventDefault();
-      if(e.target===x){pushU();NT.imgs.splice(i,1);touch();drawImgs();return}
-      const rz=e.target===h,sx=e.clientX,sy=e.clientY,o={x:im.x,y:im.y,w:im.w};let moved=false;
-      d.setPointerCapture(e.pointerId);
-      d.onpointermove=ev=>{
-        const dx=(ev.clientX-sx)/s,dy=(ev.clientY-sy)/s;if(!moved){pushU();moved=true}
-        if(rz)im.w=Math.max(60,Math.min(BW,o.w+dx));else{im.x=Math.max(-o.w/2,Math.min(BW-40,o.x+dx));im.y=Math.max(0,o.y+dy)}
-        d.style.left=im.x*s+"px";d.style.top=im.y*s+"px";d.style.width=im.w*s+"px";
-      };
-      d.onpointerup=()=>{d.onpointermove=null;if(moved)touch()};
-    };
-  });
-  loadShots();
-}
-function bindBoard(){
-  const c=document.getElementById("bc");let cur=null,er=false;
-  const pt=e=>{const r=c.getBoundingClientRect(),k=BW/r.width;return[(e.clientX-r.left)*k,(e.clientY-r.top)*k]};
-  const eraseAt=p=>{const keep=NT.strokes.filter(s=>!hit(s,p[0],p[1],14));if(keep.length!==NT.strokes.length){if(!erPushed){pushU();erPushed=true}NT.strokes=keep;redraw()}};
-  c.onpointerdown=e=>{
-    if(tool==="move")return;
-    e.preventDefault();c.setPointerCapture(e.pointerId);const p=pt(e);
-    if(tool==="eraser"){er=true;erPushed=false;eraseAt(p);return}
-    if(tool==="text"){const t=prompt("Label text");if(t){pushU();NT.strokes.push({t:"text",c:pcol,w:psz,pts:[p],txt:t.slice(0,80)});touch();redraw()}return}
-    cur={t:tool,c:pcol,w:psz,pts:[p]};
-  };
-  c.onpointermove=e=>{
-    if(er){eraseAt(pt(e));return}
-    if(!cur)return;const p=pt(e);
-    if(cur.t==="pen"||cur.t==="brush"||cur.t==="hl"){const l=cur.pts[cur.pts.length-1];if(Math.hypot(p[0]-l[0],p[1]-l[1])>1.5)cur.pts.push(p)}
-    else cur.pts[1]=snap&&(cur.t==="line"||cur.t==="arrow")?snapPt(cur.pts[0],p):p;
-    redraw(cur);
-  };
-  const end=()=>{
-    if(er){er=false;touch();return}
-    if(!cur)return;
-    if(cur.pts.length>1||cur.t==="pen"||cur.t==="brush"||cur.t==="hl"){pushU();NT.strokes.push(cur);touch()}
-    cur=null;redraw();
-  };
-  c.onpointerup=end;c.onpointercancel=end;
-}
-function initNote(){
-  if(!NT)return;
-  const b=document.getElementById("nbody");b.innerHTML=clean(NT.body||"");
-  try{document.execCommand("styleWithCSS",false,true)}catch(e){}
-  b.addEventListener("change",e=>{if(e.target.type==="checkbox"){e.target.toggleAttribute("checked",e.target.checked);touch()}});
-  b.addEventListener("paste",e=>{e.preventDefault();document.execCommand("insertText",false,(e.clipboardData||window.clipboardData).getData("text/plain"))});
-  bindBoard();fitBoard();setTool(tool);drawFiles();nsb();
-}
-async function exportBoard(){
-  const k=1400/BW,cv=document.createElement("canvas");cv.width=1400;cv.height=Math.round(NT.bh*k);const x=cv.getContext("2d");
-  x.fillStyle=NT.paper==="light"?"#ffffff":"#0e1627";x.fillRect(0,0,cv.width,cv.height);x.scale(k,k);
-  try{
-    for(const im of NT.imgs){
-      const u=shotCache["notes/"+im.p];if(!u)continue;
-      const g=await new Promise((res,rej)=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=rej;i.src=u});
-      x.drawImage(g,im.x,im.y,im.w,im.w*g.naturalHeight/g.naturalWidth);
-    }
-    NT.strokes.forEach(s=>drawS(x,s));
-    const blob=await new Promise(r=>cv.toBlob(r,"image/png")),a=document.createElement("a");
-    a.href=URL.createObjectURL(blob);a.download=((NT.title||"note").replace(/[^\w-]+/g,"_"))+".png";document.body.appendChild(a);a.click();a.remove();
-  }catch(e){toast("Could not export this page.","err")}
-}
-
 function hi(){const h=new Date().getHours();return h<12?"Good morning":h<17?"Good afternoon":"Good evening"}
 function bindAuto(){
   const q=i=>document.getElementById(i);
@@ -1036,4 +703,209 @@ function answer(q){
   }
   if(has(/\br\b|r.multiple|risk.?reward|\brr\b/)){
     const rr=T.filter(t=>t.risk>0);
-    return rr.length?`Average result${tag}: ${(rr.reduce((a,t)=>a+net(t)/t.risk,0)/rr.length).toFixed(2)}R across ${rr.length} trade${rr.length===1?"":"s"} with a risk amount recorded.`:"Add a risk amount to your trades (it fi
+    return rr.length?`Average result${tag}: ${(rr.reduce((a,t)=>a+net(t)/t.risk,0)/rr.length).toFixed(2)}R across ${rr.length} trade${rr.length===1?"":"s"} with a risk amount recorded.`:"Add a risk amount to your trades (it fills automatically for gold, silver, crypto and USD pairs) to get R multiples.";
+  }
+  if(has(/discipline|score|grade/))return `Discipline score: ${score(sx)}/100. It combines stop-loss use, profit factor, emotional control and drawdown.`;
+  if(has(/project|forecast|future|predict|next \d+ trades/)){
+    if(m.n<10)return "I need at least 10 trades to run a meaningful projection.";
+    const R=T.map(net),res=[];for(let i=0;i<500;i++){let x=0;for(let k=0;k<50;k++)x+=R[Math.floor(Math.random()*R.length)];res.push(x)}
+    res.sort((a,b)=>a-b);
+    return `Across 500 simulations of your next 50 trades${tag}: likely ${money(res[249])}, bad case ${money(res[24])}, good case ${money(res[474])}. Chance of profit ${(res.filter(v=>v>0).length/5).toFixed(0)}%.`;
+  }
+  if(has(/advice|improve|tip|suggest|weak|mistake|wrong|better|should|coach|fix|help me/)){
+    const x=tips().filter(t=>t[0]!=="g").slice(0,4).map(t=>"• "+un(t[1]));
+    return x.length?"Here is what I’d focus on:\n"+x.join("\n"):"Nothing alarming. Keep logging trades and keep your rules consistent.";
+  }
+  if(e||pr.lab!=="overall"||has(/profit|loss|made|lost|net|p&l|pnl|perform|doing|result|going|how am i|summary/))return line();
+  return "I’m not sure what you mean yet. "+HELP;
+}
+function askNow(t){
+  const el=document.getElementById("q"),q=(t||(el?el.value:"")).trim().slice(0,300);if(!q)return;
+  chat.push({q,a:answer(q)});render();window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
+}
+function vIns(){
+  const ask=`<div class="card"><h2>Ask your journal</h2><div class="chips">${["Weekly report","How am I doing this month?","Best pair","Best setup","Which day should I avoid?","How is gold doing?","Compare this week vs last week","How can I improve?"].map(x=>`<button onclick="askNow('${x}')">${x}</button>`).join("")}</div>
+  <div class="chat">${chat.map(c=>`<div class="q">${esc(c.q)}</div><div class="a">${esc(c.a)}</div>`).join("")}</div>
+  <div style="display:flex;gap:8px"><input id="q" placeholder="Ask about your trades…" onkeydown="if(event.key==='Enter')askNow()"><button class="btn sm" onclick="askNow()" style="padding:0 16px">Ask</button></div>
+  <div class="sub" style="margin-top:8px">Answers are worked out privately from your own trades. Nothing is sent anywhere.</div></div>`;
+  if(trades.length<3)return `<div class="card empty">Log at least 3 trades to unlock your AI analysis.</div>`+posCard()+ask;
+  const s=stats(),sc=score(s),lab=sc>=75?"Elite":sc>=55?"Solid":sc>=35?"Developing":"Needs work";
+  return `<div class="rings">${ring(sc,sc>=55?"--g":sc>=35?"--ac":"--r",sc,"Discipline · "+lab)}${ring(s.wr,"--g",s.wr.toFixed(0)+"%","Win rate")}</div>
+  <h2 style="margin-top:14px">Smart analysis</h2>`+tips().map(x=>`<div class="card ins ${x[0]}">${x[1]}</div>`).join("")+monthly()+proj()+posCard()+ask;
+}
+function posCard(){
+  const opts=ALLP.filter(p=>calc(p,1,2,1,1)!==null).map(p=>`<option>${p}</option>`).join("");
+  return `<div class="card"><h2>Position size calculator</h2><div class="row2"><div><label for="p_r">Risk per trade (%)</label><input id="p_r" type="number" step="any" inputmode="decimal" value="1"></div><div><label for="p_s">Pair</label><select id="p_s">${opts}</select></div></div><div class="row2"><div><label for="p_en">Entry</label><input id="p_en" type="number" step="any" inputmode="decimal"></div><div><label for="p_sl">Stop loss</label><input id="p_sl" type="number" step="any" inputmode="decimal"></div></div><button class="btn" onclick="calcLots()">Calculate lots</button><div id="p_out" style="margin-top:10px;font-weight:600"></div></div>`;
+}
+function calcLots(){
+  const o=document.getElementById("p_out"),g=i=>Number(document.getElementById(i).value),bal=stats().eq,r=g("p_r"),en=g("p_en"),sl=g("p_sl"),sy=document.getElementById("p_s").value;
+  if(!(bal>0))return o.textContent="Set a starting balance for this account first.";
+  if(!(r>0)||!(en>0)||!(sl>0)||en===sl)return o.textContent="Enter a risk %, an entry and a different stop loss.";
+  const per=Math.abs(calc(sy,en,sl,1,1)),risk=bal*r/100;
+  o.textContent=`${(risk/per).toFixed(2)} lots, risking ${money(risk)} (${r}% of ${money(bal)})`;
+}
+function proj(){
+  if(trades.length<10)return "";
+  const R=trades.map(net),N=50,S=500,res=[];
+  for(let i=0;i<S;i++){let e=0;for(let k=0;k<N;k++)e+=R[Math.floor(Math.random()*R.length)];res.push(e)}
+  res.sort((a,b)=>a-b);const q=p=>res[Math.floor(p*(S-1))],pos=res.filter(v=>v>0).length/S*100;
+  return `<div class="card"><h2>Future projection</h2><div class="sub">500 simulations of your next ${N} trades, resampled from your own results.</div><div class="grid" style="margin-top:10px"><div><div class="k">Likely case</div><div class="v ${cls(q(.5))}">${money(q(.5))}</div></div><div><div class="k">Chance of profit</div><div class="v">${pos.toFixed(0)}%</div></div><div><div class="k">Bad case (5%)</div><div class="v r">${money(q(.05))}</div></div><div><div class="k">Good case (95%)</div><div class="v g">${money(q(.95))}</div></div></div></div>`;
+}
+function render(){
+  const names={dash:"Home",trades:"Trades",add:"Add",cal:"Calendar",ins:"AI"};
+  const ic={dash:"🏠",trades:"📒",add:"＋",cal:"🗓",ins:"🧠"};
+  $("#nav").innerHTML=Object.keys(names).map(k=>`<button class="${tab===k?"on":""}" onclick="act('tab','${k}')"><i>${ic[k]}</i>${names[k]}</button>`).join("");
+  const body={dash:vDash,trades:vTrades,add:vAdd,cal:vCal,ins:vIns,detail:vDetail,settings:vSettings}[tab]();
+  $("#app").innerHTML=`<div class="top"><div><h1>Bigman Capital</h1><div class="hello">${uname?`${hi()}, <b>${esc(uname)}</b> 👋`:"Trading Journal"}</div></div><span class="sub">${accts.length>1?`<select class="acs" onchange="switchAcct(this.value)">${accts.map(a=>`<option value="${a.id}" ${a.id===active?"selected":""}>${esc(a.name)}</option>`).join("")}</select>`:""}<span id="sync">${esc(sync)}</span><button class="ib" onclick="toggleHide()" aria-label="${S.hide?"Show balances":"Hide balances"}" title="${S.hide?"Show balances":"Hide balances"}">${S.hide?"🙈":"👁"}</button><button class="ib" onclick="act('tab','settings')" aria-label="Settings" title="Settings">⚙</button></span></div>`+`<div class="view${pageAnim?" in":""}">${body}</div>`;
+  pageAnim=false;if(tab==="add")bindAuto();
+  loadShots();animateNums();
+}
+function mkStore(m,persist){
+  const emit=()=>{ingest(Object.keys(m).map(k=>Object.assign({id:k},m[k])));refresh()};
+  emit();
+  return {
+    put:async(k,o)=>{m[k]=o;emit();await persist("put",k,o)},
+    del:async k=>{delete m[k];emit();await persist("del",k)},
+    reload:async fn=>{const rows=await fn();for(const k of Object.keys(m))delete m[k];for(const r of rows)m[r.id]=r.data;emit()}
+  };
+}
+function startLocal(msg){
+  let m={};try{m=JSON.parse(localStorage.getItem("tj")||"{}")}catch(e){}
+  sync=msg||"This device only";
+  store=mkStore(m,async()=>{try{localStorage.setItem("tj",JSON.stringify(m))}catch(e){throw{code:"storage"}}});
+}
+async function startCloud(session){
+  const uid=uidG=session.user.id,md=session.user.user_metadata||{};
+  uname=String(md.name||(session.user.email||"").split("@")[0]||"").trim();if(!md.name&&uname)uname=uname[0].toUpperCase()+uname.slice(1);
+  const {data,error}=await sb.from("journal").select("id,data");
+  if(error){sync="Cloud error ("+(error.code||"load")+")";startLocal(sync);return}
+  const m={};for(const r of data)m[r.id]=r.data;
+  cloud=true;sync="";
+  store=mkStore(m,async(op,k,o)=>{
+    const r=op==="put"?await sb.from("journal").upsert({user_id:uid,id:k,data:o}):await sb.from("journal").delete().eq("id",k);
+    if(r.error)throw{code:r.error.code||"error"};
+  });
+  render();
+}
+async function signOut(){await sb.auth.signOut();location.reload()}
+let mode="in";
+function m(t,ok){const el=$("#l_m");if(el){el.textContent=t;el.style.color=ok?"var(--g)":"var(--r)"}}
+function login(msg,ok){
+  $("#nav").innerHTML="";
+  const up=mode==="up";
+  $("#app").innerHTML=`<div class="top"><div><h1>Bigman Capital</h1><div class="sub" style="letter-spacing:.16em;text-transform:uppercase;font-size:10px">Trading Journal</div></div></div>
+  <div class="card"><div class="seg"><button class="${up?"":"on"}" onclick="mode='in';login()">Sign in</button><button class="${up?"on":""}" onclick="mode='up';login()">Create account</button></div>
+  <div class="sub">${up?"Your own private journal. Your trades are visible only to you and sync to every device you sign in on.":"Welcome back. Sign in to see your journal on this device."}</div>
+  ${up?`<label for="l_n">Your name</label><input id="l_n" autocomplete="given-name" placeholder="e.g. Brian">`:""}
+  <label for="l_e">Email</label><input id="l_e" type="email" autocomplete="username">
+  <label for="l_p">Password${up?" (8+ characters)":""}</label><input id="l_p" type="password" autocomplete="${up?"new-password":"current-password"}">
+  ${up?`<label for="l_p2">Confirm password</label><input id="l_p2" type="password" autocomplete="new-password">`:""}
+  <div id="ts" style="margin-top:10px"></div><div class="err" id="l_m" style="${ok?"color:var(--g)":""}">${esc(msg||"")}</div>
+  <button class="btn" onclick="doAuth()">${up?"Create my account":"Sign in"}</button>
+  ${up?"":`<button class="btn s" onclick="forgot()">Forgot password?</button>`}</div>`;
+  setTimeout(mountTs,60);
+}
+async function doAuth(){
+  const e=$("#l_e").value.trim(),p=$("#l_p").value,nm=mode==="up"?$("#l_n").value.trim():"";
+  if(mode==="up"&&!nm)return m("Please enter your name.");
+  if(!e||!p)return m("Enter your email and password.");
+  if(Date.now()<lock)return m("Too many attempts. Please wait a moment and try again.");
+  if(TS_KEY&&!tsTok)return m("Please complete the security check.");
+  if(mode==="up"){
+    if(p.length<8)return m("Use a password of at least 8 characters.");
+    if(p!==$("#l_p2").value)return m("The passwords don’t match.");
+    const {data,error}=await sb.auth.signUp({email:e,password:p,options:{data:{name:nm},captchaToken:tsTok||undefined}});
+    if(error)return m("Sign-up failed: "+error.message);
+    if(data.session)return startCloud(data.session);
+    mode="in";return login("Account created. Check your email to confirm it, then sign in.",1);
+  }
+  const {data,error}=await sb.auth.signInWithPassword({email:e,password:p,options:{captchaToken:tsTok||undefined}});
+  if(error){if(++fails>=5){lock=Date.now()+30000;fails=0}if(window.turnstile&&TS_KEY){turnstile.reset();tsTok=""}return m("Sign-in failed: "+error.message)}
+  await startCloud(data.session);
+}
+async function forgot(){
+  const e=$("#l_e").value.trim();if(!e)return m("Enter your email first.");
+  const {error}=await sb.auth.resetPasswordForEmail(e,{redirectTo:location.origin+location.pathname,captchaToken:tsTok||undefined});
+  m(error?error.message:"Reset link sent. Check your email.",!error);
+}
+function resetForm(){
+  $("#nav").innerHTML="";
+  $("#app").innerHTML=`<div class="top"><div><h1>Bigman Capital</h1></div></div><div class="card"><h2>Choose a new password</h2><label for="n_p">New password (8+ characters)</label><input id="n_p" type="password" autocomplete="new-password"><div class="err" id="l_m"></div><button class="btn" onclick="setPw()">Save password</button></div>`;
+}
+async function setPw(){
+  const p=$("#n_p").value;if(p.length<8)return m("Use at least 8 characters.");
+  const {error}=await sb.auth.updateUser({password:p});
+  if(error)return m(error.message);
+  location.replace(location.origin+location.pathname);
+}
+(async()=>{
+  applySettings();if(["dash","trades","cal","ins"].includes(S.start))tab=S.start;
+  const ok=window.supabase&&SUPA_URL.startsWith("https://")&&!SUPA_KEY.startsWith("PASTE");
+  if(!ok){startLocal("Preview mode: saved on this device only");render();return}
+  sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+  sb.auth.onAuthStateChange(ev=>{if(ev==="PASSWORD_RECOVERY")resetForm()});
+  const {data}=await sb.auth.getSession();
+  if(data.session)await startCloud(data.session);else login();
+})();
+</script><script>
+(function(){
+  const c=document.getElementById("bg"),x=c.getContext("2d"),reduce=matchMedia("(prefers-reduced-motion:reduce)").matches;
+  const UP="#22c55e",DN="#ef4444",T=40;
+  let W=0,H=0,cw=10,gap=5,candles=[],cur,price=2650.0,vol=1.1,ticks=0,off=0,lo=2640,hi=2660,last=0,acc=0;
+  const g=()=>{let u=0;for(let i=0;i<6;i++)u+=Math.random();return(u-3)/.707};
+  const fresh=()=>{const o=cur?cur.c:price;return{o,h:o,l:o,c:o}};
+  function tick(){
+    vol=Math.max(.4,Math.min(2.6,vol*.96+.04*1.1+Math.abs(g())*.05));
+    price+=g()*vol*.55+(Math.random()<.015?g()*vol*3:0);
+    cur.c=price;cur.h=Math.max(cur.h,price);cur.l=Math.min(cur.l,price);
+    if(++ticks>=T){ticks=0;candles.push(cur=fresh());if(candles.length>90)candles.shift();off+=cw+gap}
+  }
+  function size(){
+    const d=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0);
+    cw=Math.max(7,Math.min(14,W/38));gap=Math.max(3,cw*.45);
+  }
+  function range(){
+    const n=Math.ceil(W*.9/(cw+gap)),v=candles.slice(-n);let a=1e9,b=-1e9;
+    for(const k of v){if(k.l<a)a=k.l;if(k.h>b)b=k.h}
+    const pad=(b-a)*.18+.5;lo+=(a-pad-lo)*.04;hi+=(b+pad-hi)*.04;
+  }
+  const Y=p=>H*.1+(1-(p-lo)/(hi-lo))*H*.62;
+  function draw(){
+    x.globalCompositeOperation="source-over";x.clearRect(0,0,W,H);
+    x.strokeStyle="rgba(128,140,170,.09)";x.lineWidth=1;
+    for(let i=1;i<9;i++){const y=H*.1+H*.62*i/9;x.beginPath();x.moveTo(0,y);x.lineTo(W,y);x.stroke()}
+    const xr=W*.82,n=candles.length;
+    for(let i=0;i<n;i++){
+      const k=candles[i],cx=xr-(n-1-i)*(cw+gap)-off;if(cx<-cw||cx>W+cw)continue;
+      const up=k.c>=k.o,col=up?UP:DN,yo=Y(k.o),yc=Y(k.c),top=Math.min(yo,yc),h=Math.max(1.5,Math.abs(yo-yc));
+      x.globalAlpha=.8;x.strokeStyle=col;x.fillStyle=col;x.lineWidth=1.4;
+      x.beginPath();x.moveTo(cx,Y(k.h));x.lineTo(cx,Y(k.l));x.stroke();
+      x.fillRect(cx-cw/2,top,cw,h);
+    }
+    x.globalAlpha=1;
+    const py=Y(price);x.setLineDash([4,5]);x.strokeStyle="rgba(232,184,74,.55)";x.beginPath();x.moveTo(0,py);x.lineTo(W,py);x.stroke();x.setLineDash([]);
+    x.fillStyle="rgba(232,184,74,.9)";x.font="600 11px Inter,system-ui,sans-serif";x.textAlign="right";x.fillText(price.toFixed(2),W-8,py-5);
+    x.globalCompositeOperation="destination-in";
+    const m=x.createLinearGradient(0,0,W,0);m.addColorStop(0,"rgba(0,0,0,0)");m.addColorStop(.22,"rgba(0,0,0,1)");m.addColorStop(.9,"rgba(0,0,0,1)");m.addColorStop(1,"rgba(0,0,0,.2)");
+    x.fillStyle=m;x.fillRect(0,0,W,H);
+  }
+  function frame(t){
+    if(window.__bgOff){last=t;requestAnimationFrame(frame);return}
+    const dt=Math.min(250,t-last||16);last=t;acc+=dt;
+    while(acc>=120){acc-=120;tick()}
+    off*=.92;if(off<.05)off=0;
+    range();draw();requestAnimationFrame(frame);
+  }
+  size();cur=fresh();candles.push(cur);
+  for(let i=0;i<70*T;i++)tick();off=0;
+  for(let i=0;i<40;i++)range();
+  addEventListener("resize",()=>{size();draw()});
+  draw();if(!reduce)requestAnimationFrame(frame);
+})();
+</script>
+<script>
+addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;if(tab==="dash")render()});
+addEventListener("appinstalled",()=>{dp=null;if(tab==="dash")render()});
+if("serviceWorker" in navigator&&location.protocol==="https:")addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body></html>
