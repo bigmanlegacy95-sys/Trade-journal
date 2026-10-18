@@ -211,7 +211,7 @@ function startCard(){
   <label for="f_an">Account name</label><input id="f_an" value="${esc(a.name)}" onchange="renameAcct(this.value)">
   <label for="f_start">Starting balance ($)</label><input id="f_start" type="number" inputmode="decimal" step="any" min="0" value="${esc(a.start||"")}" onchange="setStart(this.value)">
   <div class="row2" style="margin-top:12px"><input id="f_new" placeholder="New account name"><button class="btn sm" style="width:100%" onclick="addAcct()">Add account</button></div>
-  ${sb?`<label for="f_name">Your name</label><input id="f_name" value="${esc(uname)}" onchange="setName(this.value)">`:""}${sb?mt5Block():""}${instBlock()}</div>`;
+  ${sb?`<label for="f_name">Your name</label><input id="f_name" value="${esc(uname)}" onchange="setName(this.value)">`:""}${instBlock()}</div>`;
 }
 function setName(v){uname=v.trim();if(sb)sb.auth.updateUser({data:{name:uname}})}
 function setStart(v){
@@ -222,12 +222,11 @@ function setStart(v){
 
 function tradeCard(t){
   const p=net(t),conf=delId===t.id;
-  return `<div class="card"><div class="tr"><div><b>${esc(t.symbol)}</b> <span class="badge">${t.side==="buy"?"BUY":"SELL"}</span>${t.mt5?` <span class="badge" style="color:var(--gold)">MT5</span>`:""}<div class="sub">${esc(t.date.replace("T"," "))} · ${t.lots} lot${t.lots===1?"":"s"}</div></div><div style="text-align:right"><b class="${cls(p)}" style="font-size:18px">${money(p)}</b>${t.risk>0?`<div class="sub">${(p/t.risk).toFixed(2)}R</div>`:""}</div></div>
+  return `<div class="card"><div class="tr"><div><b>${esc(t.symbol)}</b> <span class="badge">${t.side==="buy"?"BUY":"SELL"}</span><div class="sub">${esc(t.date.replace("T"," "))} · ${t.lots} lot${t.lots===1?"":"s"}</div></div><div style="text-align:right"><b class="${cls(p)}" style="font-size:18px">${money(p)}</b>${t.risk>0?`<div class="sub">${(p/t.risk).toFixed(2)}R</div>`:""}</div></div>
   <div class="tags">${t.entry} → ${t.exit}${t.sl?` · SL ${t.sl}`:""}${t.tp?` · TP ${t.tp}`:""}${t.fees?` · fees ${money(t.fees)}`:""}</div>
   ${(t.setup||t.mood)?`<div class="tags">${[t.setup,t.mood].filter(Boolean).map(esc).join(" · ")}</div>`:""}
   ${t.notes?`<div style="margin-top:8px;white-space:pre-wrap">${esc(t.notes)}</div>`:""}
   ${t.shot&&!/^https?:/.test(t.shot)?`<img class="shot" data-p="${esc(t.shot)}" alt="Trade chart" onclick="openShot(this)">`:""}${t.link?`<div><a class="btn s sm" style="display:inline-block;margin-top:8px;text-decoration:none;color:var(--tx)" href="${esc(t.link)}" target="_blank" rel="noopener noreferrer">Open chart ↗</a></div>`:""}
-  ${t.mt5&&!t.notes?`<div class="sub" style="margin-top:8px;color:var(--gold)">Synced from MT5. Tap Edit to add your reason for entry.</div>`:""}
   <div class="acts"><button class="btn s sm" onclick="act('edit','${t.id}')">Edit</button><button class="btn s sm" style="${conf?"color:var(--r);border-color:var(--r)":""}" onclick="act('del','${t.id}')">${conf?"Tap again to delete":"Delete"}</button></div></div>`;
 }
 function vTrades(){
@@ -309,7 +308,7 @@ async function loadShots(){
 function openShot(im){if(im.src)window.open(im.src,"_blank","noopener")}
 async function submit(){
   const g=id=>document.getElementById(id).value.trim(),num=id=>g(id)===""?null:Number(g(id));
-  const t={acct:active,date:g("f_date"),symbol:symVal(),side:g("f_side"),lots:num("f_lots"),entry:num("f_en"),exit:num("f_ex"),pnl:num("f_pnl"),fees:g("f_fee")===""?0:Number(g("f_fee")),sl:num("f_sl"),tp:num("f_tp"),risk:num("f_risk"),setup:g("f_setup"),mood:g("f_mood"),notes:g("f_notes"),shot,link:g("f_link"),mt5:edit&&edit.mt5?true:undefined};
+  const t={acct:active,date:g("f_date"),symbol:symVal(),side:g("f_side"),lots:num("f_lots"),entry:num("f_en"),exit:num("f_ex"),pnl:num("f_pnl"),fees:g("f_fee")===""?0:Number(g("f_fee")),sl:num("f_sl"),tp:num("f_tp"),risk:num("f_risk"),setup:g("f_setup"),mood:g("f_mood"),notes:g("f_notes"),shot,link:g("f_link")};
   const bad=[];
   if(!t.date)bad.push("date & time");
   if(!t.symbol)bad.push("symbol");
@@ -414,60 +413,132 @@ function monthly(){
     b+=`<rect x="${(10+i*bw+bw*.15).toFixed(1)}" y="${y.toFixed(1)}" width="${(bw*.7).toFixed(1)}" height="${Math.max(1,h).toFixed(1)}" rx="3" style="fill:var(${v>=0?"--g":"--r"})"/><text x="${(10+i*bw+bw/2).toFixed(1)}" y="108" text-anchor="middle" font-size="8" fill="var(--mut)">${k.slice(5)}/${k.slice(2,4)}</text>`});
   return `<div class="card"><h2>Monthly results</h2><svg viewBox="0 0 320 114"><line x1="8" x2="312" y1="55" y2="55" style="stroke:var(--bd)"/>${b}</svg></div>`;
 }
+const un=s=>String(s).replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;/g,"'");
+const cap=s=>s?s[0].toUpperCase()+s.slice(1):s,f1=n=>n.toFixed(1),pfT=p=>p===null?"n/a":(p===Infinity?"∞":p.toFixed(2));
+function M(T){
+  const v=T.map(net),w=v.filter(x=>x>0),l=v.filter(x=>x<0),gw=w.reduce((a,b)=>a+b,0),gl=-l.reduce((a,b)=>a+b,0),n=T.length;
+  return{n,p:v.reduce((a,b)=>a+b,0),wr:n?w.length/n*100:0,pf:gl?gw/gl:(gw>0?Infinity:null),aw:w.length?gw/w.length:0,al:l.length?-gl/l.length:0,
+    best:n?Math.max(...v):0,worst:n?Math.min(...v):0,fees:T.reduce((a,t)=>a+(t.fees||0),0),lots:n?T.reduce((a,t)=>a+t.lots,0)/n:0};
+}
+function grp(T,kf){
+  const o={};for(const t of T){const k=kf(t);if(k==null||k==="")continue;(o[k]=o[k]||[]).push(t)}
+  return Object.entries(o).map(([k,a])=>Object.assign({k},M(a))).sort((a,b)=>b.p-a.p);
+}
+function rankText(T,kf,what,unit){
+  const g=grp(T,kf);
+  if(g.length<2)return `I need trades across at least two different ${unit} to compare them. Keep logging and ask again.`;
+  const b=g[0],w=g[g.length-1],pl=n=>n===1?"":"s";
+  return `Best ${what}: ${b.k}, ${money(b.p)} over ${b.n} trade${pl(b.n)} (${f1(b.wr)}% win rate).\nWeakest ${what}: ${w.k}, ${money(w.p)} over ${w.n} trade${pl(w.n)} (${f1(w.wr)}% win rate).`+(g.length>2?`\nFull order: ${g.map(x=>`${x.k} ${money(x.p)}`).join(", ")}.`:"");
+}
+function period(l){
+  const now=new Date(),dk=d=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+  const day=n=>{const d=new Date(now);d.setDate(d.getDate()-n);return dk(d)};
+  const inR=(a,b)=>trades.filter(t=>{const k=t.date.slice(0,10);return k>=a&&k<=b});
+  const dow=(now.getDay()+6)%7;let m;
+  if(/\byesterday\b/.test(l))return{T:inR(day(1),day(1)),lab:"yesterday"};
+  if(/\btoday\b/.test(l))return{T:inR(day(0),day(0)),lab:"today"};
+  if((m=l.match(/last (\d+) (day|week|month)/))){const n=+m[1]*({day:1,week:7,month:30}[m[2]]);return{T:inR(day(n),day(0)),lab:`in the last ${m[1]} ${m[2]}${+m[1]===1?"":"s"}`}}
+  if(/last week/.test(l))return{T:inR(day(dow+7),day(dow+1)),lab:"last week"};
+  if(/this week|\bweek(ly)?\b/.test(l))return{T:inR(day(dow),day(0)),lab:"this week"};
+  if(/last month/.test(l)){const a=new Date(now.getFullYear(),now.getMonth()-1,1),b=new Date(now.getFullYear(),now.getMonth(),0);return{T:inR(dk(a),dk(b)),lab:"last month"}}
+  if(/\bmonth(ly)?\b/.test(l))return{T:inR(dk(new Date(now.getFullYear(),now.getMonth(),1)),day(0)),lab:"this month"};
+  if(/\b(year|ytd)\b/.test(l))return{T:inR(now.getFullYear()+"-01-01",day(0)),lab:"this year"};
+  return{T:trades,lab:"overall"};
+}
+function entity(l){
+  const syms=[...new Set(trades.map(t=>t.symbol))];
+  const s=syms.find(x=>new RegExp("\\b"+x.toLowerCase()+"\\b").test(l));
+  if(s)return{f:t=>t.symbol===s,name:s};
+  for(const [k,re] of [["gold",/^XAU/],["silver",/^XAG/],["bitcoin",/^BTC/],["btc",/^BTC/],["ethereum",/^ETH/],["eth",/^ETH/]])
+    if(new RegExp("\\b"+k+"\\b").test(l))return{f:t=>re.test(t.symbol),name:k};
+  const su=[...new Set(trades.map(t=>t.setup).filter(Boolean))].find(x=>l.includes(x.toLowerCase()));
+  if(su)return{f:t=>t.setup===su,name:"the "+su+" setup"};
+  const mo=["calm","confident","anxious","fomo","revenge","greedy","bored","tired"].find(x=>new RegExp("\\b"+x+"\\b").test(l));
+  if(mo)return{f:t=>(t.mood||"").toLowerCase()===mo,name:"trades while "+mo};
+  if(/\b(buys?|long)\b/.test(l))return{f:t=>t.side==="buy",name:"buy trades"};
+  if(/\b(sells?|short)\b/.test(l))return{f:t=>t.side==="sell",name:"sell trades"};
+  return null;
+}
+const HELP="I analyse your journal privately on this device. Try:\n• “Weekly report” or “How am I doing this month?”\n• “Best pair”, “Best setup”, “Which day should I avoid?”, “Best time to trade”\n• “How is gold doing?”, “Revenge trades”, “My sells this year”\n• “Compare this week vs last week”\n• “Biggest win”, “Worst loss”, “My streak”, “Drawdown”\n• “Win rate”, “Profit factor”, “Average R”, “Fees”, “Lot size”, “Stop loss”\n• “Discipline score”, “Projection”, “How can I improve?”";
 function answer(q){
-  const s=stats();if(!s.n)return"Add a few trades first and I’ll analyse them for you.";
-  const l=q.toLowerCase(),now=Date.now();let T=trades,lab="overall";
-  const cut=(d,n)=>{T=trades.filter(t=>new Date(t.date).getTime()>=now-d*864e5);lab=n};
-  if(/today/.test(l)){const k=new Date(now-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);T=trades.filter(t=>t.date.slice(0,10)===k);lab="today"}
-  else if(/week/.test(l))cut(7,"in the last 7 days");else if(/month/.test(l))cut(30,"in the last 30 days");else if(/year/.test(l))cut(365,"in the last 12 months");
-  const u=subst(T),tp=tips(),has=r=>tp.filter(x=>r.test(x[1])).map(x=>x[1].replace(/&amp;/g,"&")).join("\n");
-  if(/setup|strategy/.test(l))return has(/setup/)||"Tag your trades with a setup name and I’ll rank them.";
-  if(/day|weekday/.test(l))return has(/day:/)||"I need at least 2 trades on a few different weekdays to compare them.";
-  if(/mood|emotion|feel|psych|mindset/.test(l))return has(/feeling|trade best/)||"Record your mindset on a few trades and I’ll compare them.";
-  if(/drawdown/.test(l))return `Your maximum drawdown is ${money(s.dd)}${s.ddp?` (${s.ddp.toFixed(1)}% from peak)`:""}.`;
-  if(/streak/.test(l))return has(/streak/)||"You’re not on a streak right now.";
-  if(/win ?rate|winrate/.test(l))return `Win rate ${lab}: ${u.wr.toFixed(1)}% across ${u.n} trade${u.n===1?"":"s"}.`;
-  if(/profit factor/.test(l))return u.pf===null?"No losing trades yet, so profit factor can’t be calculated.":`Profit factor ${lab}: ${u.pf===Infinity?"∞":u.pf.toFixed(2)}. Above 1.5 is healthy.`;
-  if(/\br\b|r.multiple|risk/.test(l))return s.r===null?"Add a risk amount to your trades (it fills automatically for gold) to get R multiples.":`Your average result is ${s.r.toFixed(2)}R per trade.`;
-  if(/expectan|average|avg/.test(l))return `Average per trade: ${money(s.ex)}. Average win ${money(s.aw)}, average loss ${money(s.al)}.`;
-  if(/how many|number|count/.test(l))return `You have logged ${u.n} trade${u.n===1?"":"s"} ${lab}.`;
-  if(/advice|improve|tip|suggest|weak|wrong|better|should|help/.test(l))return tp.filter(x=>x[0]!=="g").slice(0,3).map(x=>x[1].replace(/&amp;/g,"&")).join("\n")||"Nothing alarming. Keep logging and keep your rules consistent.";
-  if(/profit|loss|made|lost|net|p&l|pnl|perform|doing|result/.test(l))return `${lab[0].toUpperCase()+lab.slice(1)}: ${money(u.p)} over ${u.n} trade${u.n===1?"":"s"}, win rate ${u.wr.toFixed(1)}%.`;
-  return "I can answer questions like: How am I doing this month? What is my best setup? Which day should I avoid? What is my drawdown? How can I improve?";
-}
-function journalSummary(){
-  const s=stats(),a=accts.find(x=>x.id===active)||{name:"",start:0};
-  const L=[`Account: ${a.name}; start balance ${a.start||0}; current ${s.eq.toFixed(2)}`,
-    `Trades ${s.n}; net ${s.total.toFixed(2)}; win rate ${s.wr.toFixed(1)}%; profit factor ${s.pf===null?"n/a":s.pf===Infinity?"inf":s.pf.toFixed(2)}; avg win ${s.aw.toFixed(2)}; avg loss ${s.al.toFixed(2)}; max drawdown ${s.dd.toFixed(2)}`,
-    "By setup: "+Object.entries(s.by).map(([k,v])=>`${k} ${v.n} trades ${v.p.toFixed(2)}`).join("; "),
-    "Trades (date, pair, side, lots, net, setup, mood, stop):"];
-  for(const t of trades.slice(-80))L.push([t.date.slice(0,16),t.symbol,t.side,t.lots,net(t).toFixed(2),t.setup||"-",t.mood||"-",t.sl>0?"sl":"nosl"].join(","));
-  return L.join("\n").slice(0,12000);
-}
-async function askNow(t){
-  const el=document.getElementById("q"),q=(t||(el?el.value:"")).trim().slice(0,400);if(!q)return;
-  const hist=chat.slice(-6).filter(c=>c.a&&c.a!=="Thinking…").map(c=>({q:c.q.slice(0,400),a:c.a.slice(0,1200)}));
-  const item={q,a:"Thinking…"};chat.push(item);render();window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
-  let a=null,why="";
-  if(sb&&cloud){
-    try{
-      const {data,error}=await sb.functions.invoke("ask-journal",{body:{question:q,summary:journalSummary(),history:hist}});
-      if(!error&&data&&data.answer)a=data.answer;
-      else if(error&&error.context&&error.context.status===429)why="You’ve used today’s AI questions, so here is a built-in answer instead:\n";
-      else{
-        let j=null;try{j=await error.context.json()}catch(e){}
-        const st=error&&error.context&&error.context.status;
-        why="AI problem ("+((j&&j.error)||st||"unknown")+(j&&j.status?" "+j.status:"")+(j&&j.detail?": "+String(j.detail).slice(0,220):"")+"). Built-in answer instead:\n";
-      }
-    }catch(e){why="The AI isn’t reachable right now, so here is a built-in answer instead:\n"}
+  const l=" "+q.toLowerCase().replace(/[?!.,]/g," ")+" ",has=r=>r.test(l);
+  if(!trades.length)return "This account has no trades yet. Log a few and I’ll analyse them, spot patterns and coach you.";
+  if(has(/^\s*(hi|hello|hey|yo|good (morning|afternoon|evening))\b/))return `${hi()}${uname?", "+uname:""}! Ask me about your results, best pair or setup, streaks, drawdown or risk, or say “weekly report”.`;
+  if(has(/\b(help|what can you|what do you)\b/))return HELP;
+  const pr=period(l),e=entity(l),sx=stats(),T=e?pr.T.filter(e.f):pr.T,m=M(T);
+  const tag=(e?" for "+e.name:"")+(pr.lab==="overall"?"":" "+pr.lab),none=`No trades match that${tag}. Try a wider period.`;
+  const line=()=>m.n?`${cap(e?e.name:"overall")}${pr.lab==="overall"?"":" "+pr.lab}: ${money(m.p)} over ${m.n} trade${m.n===1?"":"s"}. Win rate ${f1(m.wr)}%, profit factor ${pfT(m.pf)}, average win ${money(m.aw)} vs average loss ${money(m.al)}.`:none;
+  const rk=has(/\b(best|worst|top|which|weakest|strongest|avoid|most|least)\b/);
+  if(rk&&has(/\b(pairs?|symbols?|instruments?|markets?)\b/))return rankText(pr.T,t=>t.symbol,"pair","pairs");
+  if(rk&&has(/\b(setups?|strateg(y|ies))\b/))return rankText(pr.T,t=>t.setup,"setup","setups");
+  if(rk&&has(/\b(mood|emotions?|feeling|mindset|psychology|state)\b/))return rankText(pr.T,t=>t.mood,"mindset","mindsets");
+  if(rk&&has(/\b(days?|weekdays?)\b/))return rankText(pr.T,t=>nmD[new Date(t.date).getDay()],"day","weekdays");
+  if(rk&&has(/\b(hours?|times?|sessions?|when)\b/))return rankText(pr.T,t=>{const h=+t.date.slice(11,13);if(isNaN(h))return null;const a=Math.floor(h/3)*3;return `${pad(a)}:00–${pad(a+3)}:00`},"time window","time windows");
+  if(has(/\b(compare|versus|vs)\b/)){
+    const u=has(/month/)?"month":"week",a=period(" this "+u+" "),b=period(" last "+u+" "),f=e?e.f:()=>true,ma=M(a.T.filter(f)),mb=M(b.T.filter(f));
+    return `This ${u}: ${money(ma.p)} (${ma.n} trades, ${f1(ma.wr)}% win rate)\nLast ${u}: ${money(mb.p)} (${mb.n} trades, ${f1(mb.wr)}% win rate)\n${ma.p>=mb.p?"Up":"Down"} ${money(Math.abs(ma.p-mb.p))} compared with last ${u}.`;
   }
-  item.a=a||why+answer(q);render();
+  if(has(/\b(report|review|overview|recap)\b/)){
+    const rp=pr.lab==="overall"?period(" this week "):pr,R=e?rp.T.filter(e.f):rp.T,r=M(R);
+    if(!r.n)return `No trades ${rp.lab}. Log some trades and ask again.`;
+    const out=[`${cap(rp.lab)} report`,`${money(r.p)} over ${r.n} trade${r.n===1?"":"s"}. Win rate ${f1(r.wr)}%, profit factor ${pfT(r.pf)}.`,`Best trade ${money(r.best)}, worst trade ${money(r.worst)}.`];
+    const gp=grp(R,t=>t.symbol),gs=grp(R,t=>t.setup);
+    if(gp.length)out.push(`Top pair: ${gp[0].k} (${money(gp[0].p)}).`);
+    if(gs.length)out.push(`Top setup: ${gs[0].k} (${money(gs[0].p)}).`);
+    out.push(`Discipline score: ${score(sx)}/100.`);
+    tips().slice(0,2).forEach(x=>out.push("• "+un(x[1])));
+    return out.join("\n");
+  }
+  if(has(/\b(biggest|largest|best|worst)\b/)&&has(/\b(trade|win|loss|winner|loser)\b/)){
+    if(!T.length)return none;
+    const lose=has(/\b(worst|loss|loser)\b/),t=T.slice().sort((a,b)=>lose?net(a)-net(b):net(b)-net(a))[0];
+    return `${lose?"Worst":"Best"} trade${tag}: ${t.symbol} ${t.side==="buy"?"buy":"sell"} on ${t.date.slice(0,10)}, ${money(net(t))}${t.setup?` (${t.setup})`:""}.${t.notes?" Your note: "+t.notes.slice(0,120):""}`;
+  }
+  if(has(/\bstreaks?\b/)){
+    let cw=0,cl=0,mw=0,ml=0;for(const t of trades){const p=net(t);if(p>0){cw++;cl=0}else if(p<0){cl++;cw=0}else{cw=0;cl=0}mw=Math.max(mw,cw);ml=Math.max(ml,cl)}
+    return `Current streak: ${cw?cw+" win"+(cw>1?"s":""):cl?cl+" loss"+(cl>1?"es":""):"none"}.\nLongest winning streak: ${mw}. Longest losing streak: ${ml}.`;
+  }
+  if(has(/drawdown|\bdd\b/))return `Maximum drawdown: ${money(sx.dd)}${sx.ddp?` (${f1(sx.ddp)}% from your peak)`:""}. Keep it under about 20% of your account.`;
+  if(has(/\b(balance|equity|account size|how much do i have)\b/))return `Balance: ${money(sx.eq)}. Net result so far: ${money(sx.total)}.`;
+  if(has(/win ?rate|winrate|accuracy|how often/))return m.n?`Win rate${tag}: ${f1(m.wr)}% across ${m.n} trade${m.n===1?"":"s"}.`:none;
+  if(has(/profit factor/))return m.n?`Profit factor${tag}: ${pfT(m.pf)}. Above 1.5 is healthy, below 1 means losses outweigh wins.`:none;
+  if(has(/expectan|average|avg/)&&!has(/\b(r|lots?)\b/))return m.n?`Average per trade${tag}: ${money(m.p/m.n)}. Average win ${money(m.aw)}, average loss ${money(m.al)}.`:none;
+  if(has(/\b(fees?|commissions?|swaps?|costs?)\b/))return m.n?`Fees and swaps${tag}: ${money(m.fees)} over ${m.n} trade${m.n===1?"":"s"}.`:none;
+  if(has(/how many|number of|count|total trades/))return `${m.n} trade${m.n===1?"":"s"}${tag}.`;
+  if(has(/\b(lots?|position size|size)\b/))return m.n?`Average lot size${tag}: ${m.lots.toFixed(2)}. Consistent sizing matters, so check it against your risk per trade.`:none;
+  if(has(/stop ?loss|\bsl\b/)){
+    const a=T.filter(t=>t.sl>0),b=T.filter(t=>!(t.sl>0));
+    if(!T.length)return none;
+    if(!a.length||!b.length)return `${a.length} of ${T.length} trades${tag} have a stop loss recorded.`;
+    return `Trades with a stop loss average ${money(M(a).p/a.length)} (${a.length} trades). Trades without average ${money(M(b).p/b.length)} (${b.length} trades).`;
+  }
+  if(has(/\br\b|r.multiple|risk.?reward|\brr\b/)){
+    const rr=T.filter(t=>t.risk>0);
+    return rr.length?`Average result${tag}: ${(rr.reduce((a,t)=>a+net(t)/t.risk,0)/rr.length).toFixed(2)}R across ${rr.length} trade${rr.length===1?"":"s"} with a risk amount recorded.`:"Add a risk amount to your trades (it fills automatically for gold, silver, crypto and USD pairs) to get R multiples.";
+  }
+  if(has(/discipline|score|grade/))return `Discipline score: ${score(sx)}/100. It combines stop-loss use, profit factor, emotional control and drawdown.`;
+  if(has(/project|forecast|future|predict|next \d+ trades/)){
+    if(m.n<10)return "I need at least 10 trades to run a meaningful projection.";
+    const R=T.map(net),res=[];for(let i=0;i<500;i++){let x=0;for(let k=0;k<50;k++)x+=R[Math.floor(Math.random()*R.length)];res.push(x)}
+    res.sort((a,b)=>a-b);
+    return `Across 500 simulations of your next 50 trades${tag}: likely ${money(res[249])}, bad case ${money(res[24])}, good case ${money(res[474])}. Chance of profit ${(res.filter(v=>v>0).length/5).toFixed(0)}%.`;
+  }
+  if(has(/advice|improve|tip|suggest|weak|mistake|wrong|better|should|coach|fix|help me/)){
+    const x=tips().filter(t=>t[0]!=="g").slice(0,4).map(t=>"• "+un(t[1]));
+    return x.length?"Here is what I’d focus on:\n"+x.join("\n"):"Nothing alarming. Keep logging trades and keep your rules consistent.";
+  }
+  if(e||pr.lab!=="overall"||has(/profit|loss|made|lost|net|p&l|pnl|perform|doing|result|going|how am i|summary/))return line();
+  return "I’m not sure what you mean yet. "+HELP;
+}
+function askNow(t){
+  const el=document.getElementById("q"),q=(t||(el?el.value:"")).trim().slice(0,300);if(!q)return;
+  chat.push({q,a:answer(q)});render();window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
 }
 function vIns(){
-  const ask=`<div class="card"><h2>Ask anything</h2><div class="chips">${["How am I doing this month?","What is my best setup?","Which day should I avoid?","How can I improve?","What is my drawdown?"].map(x=>`<button onclick="askNow('${x}')">${x}</button>`).join("")}</div>
+  const ask=`<div class="card"><h2>Ask your journal</h2><div class="chips">${["Weekly report","How am I doing this month?","Best pair","Best setup","Which day should I avoid?","How is gold doing?","Compare this week vs last week","How can I improve?"].map(x=>`<button onclick="askNow('${x}')">${x}</button>`).join("")}</div>
   <div class="chat">${chat.map(c=>`<div class="q">${esc(c.q)}</div><div class="a">${esc(c.a)}</div>`).join("")}</div>
-  <div style="display:flex;gap:8px"><input id="q" placeholder="Ask anything…" onkeydown="if(event.key==='Enter')askNow()"><button class="btn sm" onclick="askNow()" style="padding:0 16px">Ask</button></div>
-  <div class="sub" style="margin-top:8px">Ask about your trades or any trading topic. Answers come from AI, which also sees a summary of your trades (pair, size, result, setup and mood; your notes are never sent).</div></div>`;
+  <div style="display:flex;gap:8px"><input id="q" placeholder="Ask about your trades…" onkeydown="if(event.key==='Enter')askNow()"><button class="btn sm" onclick="askNow()" style="padding:0 16px">Ask</button></div>
+  <div class="sub" style="margin-top:8px">Answers are worked out privately from your own trades. Nothing is sent anywhere.</div></div>`;
   if(trades.length<3)return `<div class="card empty">Log at least 3 trades to unlock your AI analysis.</div>`+posCard()+ask;
   const s=stats(),sc=score(s),lab=sc>=75?"Elite":sc>=55?"Solid":sc>=35?"Developing":"Needs work";
   return `<div class="rings">${ring(sc,sc>=55?"--g":sc>=35?"--ac":"--r",sc,"Discipline · "+lab)}${ring(s.wr,"--g",s.wr.toFixed(0)+"%","Win rate")}</div>
@@ -525,56 +596,7 @@ async function startCloud(session){
     const r=op==="put"?await sb.from("journal").upsert({user_id:uid,id:k,data:o}):await sb.from("journal").delete().eq("id",k);
     if(r.error)throw{code:r.error.code||"error"};
   });
-  await loadMt5();
   render();
-  autoMt5();
-}
-let mt5Msg="",mt5=null,mt5Del=false;
-async function loadMt5(){try{const {data}=await sb.from("mt5_links").select("login,server").maybeSingle();mt5=data||null}catch(e){mt5=null}}
-function mt5Block(){
-  const inp=(id,l,t,ph)=>`<label for="${id}">${l}</label><input id="${id}" type="${t}" autocomplete="off"${ph?` placeholder="${ph}"`:""}>`;
-  return `<h2 style="margin-top:18px">MetaTrader 5</h2>${mt5?`<div class="sub">Connected: account ${esc(mt5.login)} on ${esc(mt5.server)}</div>`:`<div class="sub">Enter your MT5 details to import trades automatically. Use your investor (read-only) password, never your trading password.</div>${inp("m_srv","Server name","text","e.g. ICMarketsSC-MT5")}${inp("m_log","Account number","text")}${inp("m_pw","Investor password","password")}<button class="btn" onclick="connectMt5()">Connect MT5 account</button>`}
-  <button class="btn s" onclick="syncMt5()">Sync MT5 trades</button>${mt5?`<button class="btn s" style="${mt5Del?"color:var(--r);border-color:var(--r)":""}" onclick="disconnectMt5()">${mt5Del?"Tap again to disconnect":"Disconnect"}</button>`:""}<div class="sub" style="margin-top:6px">${esc(mt5Msg)}</div>`;
-}
-async function connectMt5(){
-  const g=i=>document.getElementById(i).value.trim(),server=g("m_srv"),login=g("m_log"),pw=document.getElementById("m_pw").value;
-  if(!server||!/^\d{3,12}$/.test(login)||!pw){mt5Msg="Enter your server, account number (digits only) and investor password.";return render()}
-  mt5Msg="Connecting… this can take a minute.";render();
-  try{
-    const {data,error}=await sb.functions.invoke("mt5-connect",{body:{action:"connect",server,login,password:pw,acct:active}});
-    if(error){let j=null;try{j=await error.context.json()}catch(e){}mt5Msg=(j&&j.message)||"Could not connect. Check your details and try again."}
-    else{mt5={login,server};mt5Msg="Connected. Your trades will appear in a few minutes.";setTimeout(()=>syncMt5(true),120000)}
-  }catch(e){mt5Msg="Could not connect. Please try again."}
-  render();
-}
-async function disconnectMt5(){
-  if(!mt5Del){mt5Del=true;return render()}
-  mt5Del=false;mt5Msg="Disconnecting…";render();
-  try{
-    const {error}=await sb.functions.invoke("mt5-connect",{body:{action:"disconnect"}});
-    if(error)mt5Msg="Could not disconnect right now.";else{mt5=null;mt5Msg="Disconnected. Trades already imported stay in your journal."}
-  }catch(e){mt5Msg="Could not disconnect right now."}
-  render();
-}
-function autoMt5(){
-  try{if(!mt5)return;if(Date.now()-Number(localStorage.getItem("mt5last")||0)<9e5)return}catch(e){}
-  syncMt5(true);
-}
-async function syncMt5(silent){
-  if(!sb||!cloud||!store)return;
-  if(!silent){mt5Msg="Syncing…";render()}
-  try{
-    const {data,error}=await sb.functions.invoke("mt5-sync",{body:{acct:active,days:90}});
-    if(error){
-      let j=null;try{j=await error.context.json()}catch(e){}
-      if(!silent)mt5Msg=j&&j.error==="nolink"?"Connect your MT5 account first.":(j&&j.error==="metaapi"&&(j.status===404||j.status===202))?"Your account is still connecting. Try again in a few minutes.":"MT5 sync failed. Please try again later.";
-    }else{
-      await store.reload(async()=>(await sb.from("journal").select("id,data")).data||[]);
-      try{localStorage.setItem("mt5last",String(Date.now()))}catch(e){}
-      if(!silent)mt5Msg=`Synced: ${(data&&data.imported)||0} new, ${(data&&data.updated)||0} updated.`;
-    }
-  }catch(e){if(!silent)mt5Msg="MT5 sync failed. Please try again later."}
-  if(!silent)render();
 }
 async function signOut(){await sb.auth.signOut();location.reload()}
 let mode="in";
