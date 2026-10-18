@@ -1036,4 +1036,10 @@ function answer(q){
   }
   if(has(/\br\b|r.multiple|risk.?reward|\brr\b/)){
     const rr=T.filter(t=>t.risk>0);
-    return rr.length?`Average result${tag}: ${(rr.reduce((a,t)=>a+net(t)/t.risk,0)/rr.length).toFixed(2)}R across ${rr.length} trade${rr.length===1?"":"s"} with a risk amount recorded.`:"Add a risk amount to your trades (it fi
+    return rr.length?`Average result${tag}: ${(rr.reduce((a,t)=>a+net(t)/t.risk,0)/rr.length).toFixed(2)}R across ${rr.length} trade${rr.length===1?"":"s"} with a risk amount recorded.`:"Add a risk amount to your trades (it fits your trading plan).";
+  }
+  return line()+"\n\nTry asking for a weekly report, best setup, biggest win, drawdown, fees, or average R.";
+}
+</script>
+</body>
+</html>
